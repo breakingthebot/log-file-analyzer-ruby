@@ -1,6 +1,6 @@
 # Log File Analyzer
 
-Reads common server access logs or newline-delimited JSON logs and reports request counts, error rates, and top endpoints from the command line.
+Reads common server access logs or newline-delimited JSON logs and reports request counts, error rates, method breakdowns, status breakdowns, and top endpoints from the command line.
 
 ## Stack
 - Ruby 3.4
@@ -26,12 +26,13 @@ No environment variables are required for iteration 1. See `.env.example`.
 Not deployed. This is a local CLI tool.
 
 ## Architecture Notes
-This build is a small command-line tool that takes a server log and turns it into something immediately useful: how many requests came in, how many failed, and which endpoints got hit the most. I split it into a parser, an analyzer, and a formatter so each part has one job, which makes the behavior easier to test and easier to extend later if the log format or output needs change.
+This build is a small command-line tool that takes a server log and turns it into something immediately useful: how many requests came in, how many failed, which kinds of requests they were, and which endpoints got hit the most. I split it into a parser, an analyzer, and a formatter so each part has one job, which makes the behavior easier to test and easier to extend later if the log format or output needs change.
 
-In this iteration I made the parsed timestamp a first-class part of each log entry and added a dedicated time-window filter between parsing and analysis. That means the CLI can answer a more realistic ops question, which is usually "what happened during this incident window?" instead of only "what happened in the whole file?"
+In this iteration I expanded the summary itself so it can show request breakdowns by method and status. That matters because a raw error rate is usually not enough for debugging; teams need to know whether the failures are concentrated in `POST` traffic, 5xx responses, or one specific status code before they can act on the report.
 
 ## Notes
 - The CLI supports `common`, `json`, and `auto` input modes.
 - Time filters use inclusive ISO 8601 values such as `2026-06-29T10:00:00Z`.
+- Reports include method counts, status-family counts, and exact status-code counts.
 - Query strings are removed before endpoint aggregation so the same route is counted consistently.
 - Malformed lines are skipped instead of crashing the whole analysis run.

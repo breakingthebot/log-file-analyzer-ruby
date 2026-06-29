@@ -53,9 +53,26 @@ module LogFileAnalyzer
           "Total requests: #{summary.fetch('total_requests')}",
           "Error requests: #{summary.fetch('error_requests')}",
           "Error rate: #{sprintf('%.2f', summary.fetch('error_rate'))}%",
+          "Methods:",
+          build_breakdown_lines(summary.fetch("methods")),
+          "Status families:",
+          build_breakdown_lines(summary.fetch("status_families")),
+          "Status codes:",
+          build_breakdown_lines(summary.fetch("status_codes")),
           "Top endpoints:",
           (top_endpoints.empty? ? "  - No endpoints found" : top_endpoints.join("\n"))
         ].join("\n")
+      end
+
+      # Builds text lines for a generic request breakdown section.
+      # @param breakdown [Array<Hash>] summary breakdown entries
+      # @return [String]
+      def build_breakdown_lines(breakdown)
+        lines = breakdown.map do |entry|
+          "  - #{entry.fetch('label')}: #{entry.fetch('requests')} requests"
+        end
+
+        lines.empty? ? "  - No data found" : lines.join("\n")
       end
     end
   end

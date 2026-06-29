@@ -18,3 +18,9 @@
 - Add `--start-time` and `--end-time` filters using inclusive ISO 8601 windows.
 - Parse timestamps from both common access logs and JSON log lines.
 - Add dedicated tests for time-window validation and filtering.
+
+## [0.4.0] - 2026-06-29
+
+- Add request breakdowns by HTTP method, status family, and exact status code.
+- Extend text and JSON reports to expose the new breakdown sections.
+- Add analyzer and formatter coverage for the richer summary structure.

@@ -24,6 +24,12 @@ module LogFileAnalyzer
         assert_equal 50.0, summary["error_rate"]
         assert_equal "/api/users", summary["top_endpoints"].first["endpoint"]
         assert_equal 2, summary["top_endpoints"].first["requests"]
+        assert_equal "GET", summary["methods"].first["label"]
+        assert_equal 3, summary["methods"].first["requests"]
+        assert_equal "2xx", summary["status_families"].first["label"]
+        assert_equal 2, summary["status_families"].first["requests"]
+        assert_equal "200", summary["status_codes"].first["label"]
+        assert_equal 2, summary["status_codes"].first["requests"]
       end
     end
   end

@@ -17,6 +17,10 @@ module LogFileAnalyzer
 
         assert_includes report, "Total requests: 3"
         assert_includes report, "Error rate: 33.33%"
+        assert_includes report, "Methods:"
+        assert_includes report, "  - GET: 2 requests"
+        assert_includes report, "Status families:"
+        assert_includes report, "  - 2xx: 2 requests"
         assert_includes report, "  - /api/users: 2 requests"
       end
 
@@ -29,6 +33,8 @@ module LogFileAnalyzer
 
         assert_equal 1, report["top_endpoints"].length
         assert_equal "/api/users", report["top_endpoints"].first["endpoint"]
+        assert_equal "GET", report["methods"].first["label"]
+        assert_equal "200", report["status_codes"].first["label"]
       end
 
       private
@@ -40,6 +46,18 @@ module LogFileAnalyzer
           "total_requests" => 3,
           "error_requests" => 1,
           "error_rate" => 33.33,
+          "methods" => [
+            { "label" => "GET", "requests" => 2 },
+            { "label" => "POST", "requests" => 1 }
+          ],
+          "status_families" => [
+            { "label" => "2xx", "requests" => 2 },
+            { "label" => "5xx", "requests" => 1 }
+          ],
+          "status_codes" => [
+            { "label" => "200", "requests" => 2 },
+            { "label" => "500", "requests" => 1 }
+          ],
           "top_endpoints" => [
             { "endpoint" => "/api/users", "requests" => 2 },
             { "endpoint" => "/health", "requests" => 1 }
