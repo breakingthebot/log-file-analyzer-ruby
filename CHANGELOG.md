@@ -66,3 +66,9 @@
 - Tighten config validation for unsupported keys and invalid option values.
 - Validate `format`, `input_format`, `input_paths`, and `output_path` directly in the config loader.
 - Add fixture coverage for bad config shapes and clearer error handling.
+
+## [0.12.0] - 2026-06-29
+
+- Add multi-series time buckets with `method` and `status-family` breakdown modes.
+- Extend text, JSON, CSV, and config handling to include per-bucket series summaries.
+- Add analyzer and formatter coverage for the richer trend output.

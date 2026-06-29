@@ -7,6 +7,7 @@ require "time"
 
 require_relative "config/version"
 require_relative "config/time_bucket_options"
+require_relative "config/time_bucket_series_options"
 require_relative "services/log_parser"
 require_relative "services/log_analyzer"
 require_relative "services/time_window_filter"
@@ -41,6 +42,11 @@ module LogFileAnalyzer
         end_time: time_window[:end_time]
       )
       summary = Services::LogAnalyzer.new.summarize(filtered_entries, time_bucket: options[:time_bucket])
+      summary = Services::LogAnalyzer.new.summarize(
+        filtered_entries,
+        time_bucket: options[:time_bucket],
+        time_bucket_series: options[:time_bucket_series]
+      )
       report = Utils::ReportFormatter.new(top_limit: options[:top]).format(summary, format: options[:format])
       output_path = Utils::OutputWriter.new.write(report, output_path: options[:output_path], logger: logger)
       puts "Report written to #{output_path}" unless output_path.nil?
@@ -59,6 +65,7 @@ module LogFileAnalyzer
         format: "text",
         input_format: "auto",
         time_bucket: "none",
+        time_bucket_series: "none",
         top: Utils::ReportFormatter::DEFAULT_TOP_LIMIT
       }
       cli_options = {}
@@ -90,6 +97,10 @@ module LogFileAnalyzer
 
         opts.on("--time-bucket BUCKET", LogFileAnalyzer::Config::TIME_BUCKET_OPTIONS, "Time bucket: none, minute, or hour") do |time_bucket|
           cli_options[:time_bucket] = time_bucket
+        end
+
+        opts.on("--time-bucket-series SERIES", LogFileAnalyzer::Config::TIME_BUCKET_SERIES_OPTIONS, "Time bucket series: none, method, or status-family") do |time_bucket_series|
+          cli_options[:time_bucket_series] = time_bucket_series
         end
 
         opts.on("--output PATH", "Optional output file path for the rendered report") do |output_path|

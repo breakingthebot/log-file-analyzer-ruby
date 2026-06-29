@@ -14,8 +14,9 @@ module LogFileAnalyzer
       # Builds a summary hash from parsed log entries.
       # @param entries [Array<LogEntry>] parsed log entries
       # @param time_bucket [String] bucket mode: none, minute, or hour
+      # @param time_bucket_series [String] series mode: none, method, or status-family
       # @return [Hash]
-      def summarize(entries, time_bucket: "none")
+      def summarize(entries, time_bucket: "none", time_bucket_series: "none")
         total_requests = entries.length
         error_requests = entries.count { |entry| error_status?(entry.status_code) }
         endpoint_counts = entries.each_with_object(Hash.new(0)) do |entry, counts|
@@ -38,7 +39,7 @@ module LogFileAnalyzer
           "methods" => build_breakdown(method_counts),
           "status_families" => build_breakdown(status_family_counts),
           "status_codes" => build_breakdown(status_code_counts),
-          "time_buckets" => build_time_buckets(entries, time_bucket: time_bucket),
+          "time_buckets" => build_time_buckets(entries, time_bucket: time_bucket, time_bucket_series: time_bucket_series),
           "top_endpoints" => endpoint_counts
             .sort_by { |endpoint, count| [-count, endpoint] }
             .map { |endpoint, count| { "endpoint" => endpoint, "requests" => count } }
@@ -83,16 +84,19 @@ module LogFileAnalyzer
       # Builds a chronological request/error series for the selected bucket mode.
       # @param entries [Array<LogEntry>] parsed log entries
       # @param time_bucket [String] bucket mode
+      # @param time_bucket_series [String] series mode
       # @return [Array<Hash>]
-      def build_time_buckets(entries, time_bucket:)
+      def build_time_buckets(entries, time_bucket:, time_bucket_series:)
         return [] if time_bucket == "none"
 
-        bucket_counts = entries.each_with_object(Hash.new { |hash, key| hash[key] = { requests: 0, errors: 0 } }) do |entry, counts|
+        bucket_counts = entries.each_with_object(Hash.new { |hash, key| hash[key] = { requests: 0, errors: 0, series_counts: Hash.new(0) } }) do |entry, counts|
           next if entry.timestamp.nil?
 
           bucket_label = format_time_bucket(entry.timestamp, time_bucket)
           counts[bucket_label][:requests] += 1
           counts[bucket_label][:errors] += 1 if error_status?(entry.status_code)
+          series_label = resolve_time_bucket_series_label(entry, time_bucket_series)
+          counts[bucket_label][:series_counts][series_label] += 1 unless series_label.nil?
         end
 
         bucket_counts
@@ -101,7 +105,8 @@ module LogFileAnalyzer
             {
               "label" => label,
               "requests" => counts[:requests],
-              "errors" => counts[:errors]
+              "errors" => counts[:errors],
+              "series" => build_breakdown(counts[:series_counts])
             }
           end
       end
@@ -120,6 +125,23 @@ module LogFileAnalyzer
           utc_time.strftime("%Y-%m-%dT%H:00:00Z")
         else
           raise ArgumentError, "Unsupported time bucket: #{time_bucket}"
+        end
+      end
+
+      # Resolves the series label for a bucketed entry based on the configured series mode.
+      # @param entry [LogEntry] parsed log entry
+      # @param time_bucket_series [String] series mode
+      # @return [String, nil]
+      def resolve_time_bucket_series_label(entry, time_bucket_series)
+        case time_bucket_series
+        when "none"
+          nil
+        when "method"
+          entry.http_method
+        when "status-family"
+          status_family_label(entry.status_code)
+        else
+          raise ArgumentError, "Unsupported time bucket series: #{time_bucket_series}"
         end
       end
     end

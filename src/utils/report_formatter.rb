@@ -84,11 +84,23 @@ module LogFileAnalyzer
       # @param time_buckets [Array<Hash>] bucketed summary entries
       # @return [String]
       def build_time_bucket_lines(time_buckets)
-        lines = time_buckets.map do |entry|
-          "  - #{entry.fetch('label')}: #{entry.fetch('requests')} requests, #{entry.fetch('errors')} errors"
+        lines = time_buckets.flat_map do |entry|
+          bucket_lines = [
+            "  - #{entry.fetch('label')}: #{entry.fetch('requests')} requests, #{entry.fetch('errors')} errors"
+          ]
+          bucket_lines.concat(build_time_bucket_series_lines(entry.fetch("series")))
         end
 
         lines.empty? ? "  - No bucketed data found" : lines.join("\n")
+      end
+
+      # Builds text lines for a bucket's secondary series breakdown.
+      # @param series [Array<Hash>] per-bucket series entries
+      # @return [Array<String>]
+      def build_time_bucket_series_lines(series)
+        series.map do |entry|
+          "    #{entry.fetch('label')}: #{entry.fetch('requests')} requests"
+        end
       end
 
       # Builds a machine-friendly CSV report with sectioned rows.
@@ -128,6 +140,9 @@ module LogFileAnalyzer
       def append_time_bucket_rows(csv, time_buckets)
         time_buckets.each do |entry|
           csv << ["time_buckets", entry.fetch("label"), entry.fetch("requests"), entry.fetch("errors")]
+          entry.fetch("series").each do |series_entry|
+            csv << ["time_bucket_series", entry.fetch("label"), series_entry.fetch("requests"), series_entry.fetch("label")]
+          end
         end
       end
     end

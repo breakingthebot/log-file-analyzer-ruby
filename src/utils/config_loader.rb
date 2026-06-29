@@ -4,6 +4,7 @@
 
 require "yaml"
 require_relative "../config/time_bucket_options"
+require_relative "../config/time_bucket_series_options"
 require_relative "../services/line_parser_factory"
 
 module LogFileAnalyzer
@@ -11,7 +12,7 @@ module LogFileAnalyzer
     # Reads and normalizes supported config values from disk.
     class ConfigLoader
       DEFAULT_CONFIG_PATH = ".log-file-analyzer.yml"
-      ALLOWED_KEYS = %w[format input_format top start_time end_time input_paths time_bucket output_path].freeze
+      ALLOWED_KEYS = %w[format input_format top start_time end_time input_paths time_bucket time_bucket_series output_path].freeze
       FORMAT_OPTIONS = %w[text json csv].freeze
 
       # Loads config values from a YAML file when it exists.
@@ -49,6 +50,7 @@ module LogFileAnalyzer
         normalize_output_path!(config)
         normalize_top!(config)
         normalize_time_bucket!(config)
+        normalize_time_bucket_series!(config)
         config
       end
 
@@ -139,6 +141,18 @@ module LogFileAnalyzer
         return if LogFileAnalyzer::Config::TIME_BUCKET_OPTIONS.include?(config[:time_bucket])
 
         raise ArgumentError, "Config value for time_bucket must be one of: #{LogFileAnalyzer::Config::TIME_BUCKET_OPTIONS.join(', ')}."
+      end
+
+      # Validates the configured time bucket series value.
+      # @param config [Hash] config hash being normalized
+      # @return [void]
+      def normalize_time_bucket_series!(config)
+        return unless config.key?(:time_bucket_series)
+
+        config[:time_bucket_series] = config[:time_bucket_series].to_s
+        return if LogFileAnalyzer::Config::TIME_BUCKET_SERIES_OPTIONS.include?(config[:time_bucket_series])
+
+        raise ArgumentError, "Config value for time_bucket_series must be one of: #{LogFileAnalyzer::Config::TIME_BUCKET_SERIES_OPTIONS.join(', ')}."
       end
     end
   end

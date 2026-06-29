@@ -24,10 +24,11 @@ No environment variables are required for iteration 1. See `.env.example`.
 5. Run `bundle exec ruby -Isrc exe/log-file-analyzer --format csv tests/fixtures/server.log`.
 6. Run `bundle exec ruby -Isrc exe/log-file-analyzer --config .log-file-analyzer.yml`.
 7. Run `bundle exec ruby -Isrc exe/log-file-analyzer --time-bucket minute tests/fixtures/server.log`.
-8. Run `bundle exec ruby -Isrc exe/log-file-analyzer --format csv --output tmp/report.csv tests/fixtures/server.log`.
-9. Optional filtered run: `bundle exec ruby -Isrc exe/log-file-analyzer --start-time 2026-06-29T10:00:01Z --end-time 2026-06-29T10:00:03Z tests/fixtures/server.log`.
-10. Run `bundle exec ruby -Isrc exe/log-file-analyzer tests/fixtures/batch/mixed/common-mixed.data tests/fixtures/batch/mixed/json-mixed.data`.
-11. Optional JSON report output: `bundle exec ruby -Isrc exe/log-file-analyzer --format json tests/fixtures/server.log`.
+8. Run `bundle exec ruby -Isrc exe/log-file-analyzer --time-bucket minute --time-bucket-series method tests/fixtures/server.log`.
+9. Run `bundle exec ruby -Isrc exe/log-file-analyzer --format csv --output tmp/report.csv tests/fixtures/server.log`.
+10. Optional filtered run: `bundle exec ruby -Isrc exe/log-file-analyzer --start-time 2026-06-29T10:00:01Z --end-time 2026-06-29T10:00:03Z tests/fixtures/server.log`.
+11. Run `bundle exec ruby -Isrc exe/log-file-analyzer tests/fixtures/batch/mixed/common-mixed.data tests/fixtures/batch/mixed/json-mixed.data`.
+12. Optional JSON report output: `bundle exec ruby -Isrc exe/log-file-analyzer --format json tests/fixtures/server.log`.
 
 ## Deployed
 Not deployed. This is a local CLI tool.
@@ -37,7 +38,7 @@ This build is a small command-line tool that takes a server log and turns it int
 
 In this iteration I added direct file output so the analyzer can participate in scripted workflows without shell redirection. The CLI now keeps stdout as the default, but it can also write the rendered report straight to a requested path, which makes CSV and JSON exports much easier to schedule or hand off to another step in a pipeline.
 
-The next pass tightened config validation so shared defaults fail loudly instead of being partially ignored. Unsupported keys, bad format values, invalid path containers, and blank output paths now raise explicit errors close to the config loader, which makes team-shared YAML files much easier to debug.
+The next pass added multi-series time buckets so each trend interval can explain what drove the change, not just how large the bucket was. The CLI now supports method or status-family series inside each bucket, which makes trend output much more useful during incident review because it can show whether a spike was mostly `POST` traffic, mostly 5xx responses, or something else entirely.
 
 ## Notes
 - The CLI supports `common`, `json`, and `auto` input modes.
@@ -46,6 +47,7 @@ The next pass tightened config validation so shared defaults fail loudly instead
 - The CLI can load defaults from `.log-file-analyzer.yml` or a custom path passed through `--config`.
 - Config files reject unsupported keys and invalid option values with explicit errors.
 - The CLI supports `--time-bucket none|minute|hour` for trend summaries.
+- The CLI supports `--time-bucket-series none|method|status-family` for per-bucket breakdowns.
 - Auto input mode detects format per file inside batch runs.
 - The CLI supports `--output PATH` to write the rendered report directly to disk.
 - Time filters use inclusive ISO 8601 values such as `2026-06-29T10:00:00Z`.
