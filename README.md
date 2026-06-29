@@ -19,7 +19,8 @@ No environment variables are required for iteration 1. See `.env.example`.
 ## Running Locally
 1. Run `bundle exec ruby -Isrc exe/log-file-analyzer tests/fixtures/server.log`.
 2. Run `bundle exec ruby -Isrc exe/log-file-analyzer --input-format json tests/fixtures/server.jsonl`.
-3. Optional JSON report output: `bundle exec ruby -Isrc exe/log-file-analyzer --format json tests/fixtures/server.log`.
+3. Run `bundle exec ruby -Isrc exe/log-file-analyzer --start-time 2026-06-29T10:00:01Z --end-time 2026-06-29T10:00:03Z tests/fixtures/server.log`.
+4. Optional JSON report output: `bundle exec ruby -Isrc exe/log-file-analyzer --format json tests/fixtures/server.log`.
 
 ## Deployed
 Not deployed. This is a local CLI tool.
@@ -27,9 +28,10 @@ Not deployed. This is a local CLI tool.
 ## Architecture Notes
 This build is a small command-line tool that takes a server log and turns it into something immediately useful: how many requests came in, how many failed, and which endpoints got hit the most. I split it into a parser, an analyzer, and a formatter so each part has one job, which makes the behavior easier to test and easier to extend later if the log format or output needs change.
 
-In this iteration I pushed the parsing one step further by separating line parsers by format. That lets the CLI accept either common access logs or newline-delimited JSON logs with an explicit flag or in `auto` mode, while the analyzer and formatter stay unchanged. It is a cleaner extension point than stuffing more regular expressions into one class.
+In this iteration I made the parsed timestamp a first-class part of each log entry and added a dedicated time-window filter between parsing and analysis. That means the CLI can answer a more realistic ops question, which is usually "what happened during this incident window?" instead of only "what happened in the whole file?"
 
 ## Notes
 - The CLI supports `common`, `json`, and `auto` input modes.
+- Time filters use inclusive ISO 8601 values such as `2026-06-29T10:00:00Z`.
 - Query strings are removed before endpoint aggregation so the same route is counted consistently.
 - Malformed lines are skipped instead of crashing the whole analysis run.

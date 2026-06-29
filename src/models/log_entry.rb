@@ -4,5 +4,5 @@
 
 module LogFileAnalyzer
   # Immutable data object for one parsed request line.
-  LogEntry = Struct.new(:http_method, :endpoint, :status_code, keyword_init: true)
+  LogEntry = Struct.new(:http_method, :endpoint, :status_code, :timestamp, keyword_init: true)
 end

@@ -8,9 +8,11 @@ require "time"
 require_relative "config/version"
 require_relative "services/log_parser"
 require_relative "services/log_analyzer"
+require_relative "services/time_window_filter"
 require_relative "utils/logger_factory"
 require_relative "utils/path_validator"
 require_relative "utils/report_formatter"
+require_relative "utils/time_window_parser"
 
 module LogFileAnalyzer
   # Coordinates CLI argument parsing and report generation.
@@ -24,9 +26,18 @@ module LogFileAnalyzer
       logger = Utils.build_logger
       options = parse_options(argv)
       file_path = Utils.validate_log_file!(options[:file_path], logger: logger)
+      time_window = Utils::TimeWindowParser.new.parse(
+        start_time_text: options[:start_time],
+        end_time_text: options[:end_time]
+      )
 
       entries = Services::LogParser.new(logger: logger, input_format: options[:input_format]).parse_file(file_path)
-      summary = Services::LogAnalyzer.new.summarize(entries)
+      filtered_entries = Services::TimeWindowFilter.new.filter(
+        entries,
+        start_time: time_window[:start_time],
+        end_time: time_window[:end_time]
+      )
+      summary = Services::LogAnalyzer.new.summarize(filtered_entries)
       report = Utils::ReportFormatter.new(top_limit: options[:top]).format(summary, format: options[:format])
 
       puts report
@@ -56,6 +67,14 @@ module LogFileAnalyzer
 
         opts.on("--input-format FORMAT", Services::LineParserFactory::SUPPORTED_FORMATS, "Input format: auto, common, or json") do |input_format|
           options[:input_format] = input_format
+        end
+
+        opts.on("--start-time TIME", "Inclusive ISO 8601 start time filter") do |start_time|
+          options[:start_time] = start_time
+        end
+
+        opts.on("--end-time TIME", "Inclusive ISO 8601 end time filter") do |end_time|
+          options[:end_time] = end_time
         end
 
         opts.on("--top COUNT", Integer, "Number of top endpoints to display") do |count|

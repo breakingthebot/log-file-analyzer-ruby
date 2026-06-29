@@ -3,6 +3,7 @@
 # Created: 2026-06-29
 
 require "json"
+require "time"
 require_relative "../../models/log_entry"
 
 module LogFileAnalyzer
@@ -13,6 +14,7 @@ module LogFileAnalyzer
         METHOD_KEYS = %w[method http_method request_method].freeze
         ENDPOINT_KEYS = %w[endpoint path request_path url].freeze
         STATUS_KEYS = %w[status status_code response_status].freeze
+        TIMESTAMP_KEYS = %w[timestamp time occurred_at requested_at].freeze
 
         # Parses a line into a LogEntry when the format matches.
         # @param line [String] raw log line
@@ -22,14 +24,18 @@ module LogFileAnalyzer
           method = fetch_value(payload, METHOD_KEYS)
           endpoint = fetch_value(payload, ENDPOINT_KEYS)
           status_code = fetch_value(payload, STATUS_KEYS)
-          return nil if method.nil? || endpoint.nil? || status_code.nil?
+          timestamp = fetch_value(payload, TIMESTAMP_KEYS)
+          return nil if method.nil? || endpoint.nil? || status_code.nil? || timestamp.nil?
 
           LogEntry.new(
             http_method: method.to_s.upcase,
             endpoint: normalize_endpoint(endpoint.to_s),
-            status_code: Integer(status_code)
+            status_code: Integer(status_code),
+            timestamp: Time.iso8601(timestamp.to_s)
           )
         rescue JSON::ParserError
+          nil
+        rescue ArgumentError
           nil
         end
 

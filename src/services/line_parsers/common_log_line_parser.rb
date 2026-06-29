@@ -2,6 +2,7 @@
 # Connects to: src/models/log_entry.rb, src/services/log_parser.rb.
 # Created: 2026-06-29
 
+require "time"
 require_relative "../../models/log_entry"
 
 module LogFileAnalyzer
@@ -12,7 +13,7 @@ module LogFileAnalyzer
         LOG_PATTERN = /
           ^
           \S+\s+\S+\s+\S+\s+
-          \[[^\]]+\]\s+
+          \[(?<timestamp>[^\]]+)\]\s+
           "(?<method>[A-Z]+)\s+(?<endpoint>\S+)(?:\s+[^"]+)?"\s+
           (?<status>\d{3})\s+
           \S+
@@ -28,7 +29,8 @@ module LogFileAnalyzer
           LogEntry.new(
             http_method: match_data[:method],
             endpoint: normalize_endpoint(match_data[:endpoint]),
-            status_code: match_data[:status].to_i
+            status_code: match_data[:status].to_i,
+            timestamp: parse_timestamp(match_data[:timestamp])
           )
         end
 
@@ -39,6 +41,13 @@ module LogFileAnalyzer
         # @return [String]
         def normalize_endpoint(endpoint)
           endpoint.split("?").first
+        end
+
+        # Parses a common-log timestamp into a Time object.
+        # @param timestamp_text [String] raw timestamp text
+        # @return [Time]
+        def parse_timestamp(timestamp_text)
+          Time.strptime(timestamp_text, "%d/%b/%Y:%H:%M:%S %z")
         end
       end
     end

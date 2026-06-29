@@ -20,6 +20,7 @@ module LogFileAnalyzer
         assert_equal "/api/users", entries[1].endpoint
         assert_equal "/api/users", entries[3].endpoint
         assert_equal 500, entries[2].status_code
+        assert_equal Time.iso8601("2026-06-29T10:00:00Z"), entries[0].timestamp.utc
       end
 
       # Verifies the parser converts newline-delimited JSON logs and skips invalid lines.
@@ -34,6 +35,7 @@ module LogFileAnalyzer
         assert_equal "/", entries[0].endpoint
         assert_equal "/api/users", entries[2].endpoint
         assert_equal 503, entries[2].status_code
+        assert_equal Time.iso8601("2026-06-29T10:00:03Z"), entries[3].timestamp.utc
       end
 
       # Verifies auto mode can parse files without an explicit format flag.

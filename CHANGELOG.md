@@ -12,3 +12,9 @@
 - Add `--input-format` support with `auto`, `common`, and `json` modes.
 - Split line parsing into format-specific parser classes to keep parsing modular.
 - Add newline-delimited JSON log fixtures and parser coverage for structured logs.
+
+## [0.3.0] - 2026-06-29
+
+- Add `--start-time` and `--end-time` filters using inclusive ISO 8601 windows.
+- Parse timestamps from both common access logs and JSON log lines.
+- Add dedicated tests for time-window validation and filtering.
