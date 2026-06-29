@@ -25,7 +25,7 @@ module LogFileAnalyzer
       options = parse_options(argv)
       file_path = Utils.validate_log_file!(options[:file_path], logger: logger)
 
-      entries = Services::LogParser.new(logger: logger).parse_file(file_path)
+      entries = Services::LogParser.new(logger: logger, input_format: options[:input_format]).parse_file(file_path)
       summary = Services::LogAnalyzer.new.summarize(entries)
       report = Utils::ReportFormatter.new(top_limit: options[:top]).format(summary, format: options[:format])
 
@@ -41,13 +41,21 @@ module LogFileAnalyzer
     # @param argv [Array<String>] command line arguments
     # @return [Hash]
     def parse_options(argv)
-      options = { format: "text", top: Utils::ReportFormatter::DEFAULT_TOP_LIMIT }
+      options = {
+        format: "text",
+        input_format: "auto",
+        top: Utils::ReportFormatter::DEFAULT_TOP_LIMIT
+      }
 
       parser = OptionParser.new do |opts|
         opts.banner = "Usage: log-file-analyzer [options] LOG_FILE"
 
         opts.on("--format FORMAT", %w[text json], "Output format: text or json") do |format|
           options[:format] = format
+        end
+
+        opts.on("--input-format FORMAT", Services::LineParserFactory::SUPPORTED_FORMATS, "Input format: auto, common, or json") do |input_format|
+          options[:input_format] = input_format
         end
 
         opts.on("--top COUNT", Integer, "Number of top endpoints to display") do |count|

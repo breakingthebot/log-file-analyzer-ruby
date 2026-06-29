@@ -1,26 +1,19 @@
-# Parses common access log lines into structured entries.
-# Connects to: src/models/log_entry.rb, src/utils/logger_factory.rb.
+# Parses supported log files into structured entries.
+# Connects to: src/services/line_parser_factory.rb, src/utils/logger_factory.rb.
 # Created: 2026-06-29
 
-require_relative "../models/log_entry"
+require_relative "line_parser_factory"
 
 module LogFileAnalyzer
   module Services
-    # Parses Apache or Nginx style common log lines.
+    # Parses supported log formats by delegating line parsing to format-specific handlers.
     class LogParser
-      LOG_PATTERN = /
-        ^
-        \S+\s+\S+\s+\S+\s+
-        \[[^\]]+\]\s+
-        "(?<method>[A-Z]+)\s+(?<endpoint>\S+)(?:\s+[^"]+)?"\s+
-        (?<status>\d{3})\s+
-        \S+
-      /x.freeze
-
       # Builds a parser with a logger.
       # @param logger [Logger] diagnostic logger
-      def initialize(logger:)
+      # @param input_format [String] requested input format
+      def initialize(logger:, input_format: "auto")
         @logger = logger
+        @line_parsers = LineParserFactory.build(input_format)
       end
 
       # Parses a log file into valid log entries.
@@ -45,21 +38,12 @@ module LogFileAnalyzer
       # @param line [String] raw log line
       # @return [LogEntry, nil]
       def parse_line(line)
-        match_data = LOG_PATTERN.match(line)
-        return nil unless match_data
+        @line_parsers.each do |line_parser|
+          entry = line_parser.parse(line)
+          return entry if entry
+        end
 
-        LogEntry.new(
-          http_method: match_data[:method],
-          endpoint: normalize_endpoint(match_data[:endpoint]),
-          status_code: match_data[:status].to_i
-        )
-      end
-
-      # Removes query strings so endpoint counts stay consistent.
-      # @param endpoint [String] raw request target
-      # @return [String]
-      def normalize_endpoint(endpoint)
-        endpoint.split("?").first
+        nil
       end
     end
   end

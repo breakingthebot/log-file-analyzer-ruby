@@ -1,0 +1,6 @@
+{"timestamp":"2026-06-29T10:00:00Z","method":"GET","path":"/","status":200}
+{"timestamp":"2026-06-29T10:00:01Z","http_method":"GET","request_path":"/api/users","status_code":200}
+{"timestamp":"2026-06-29T10:00:02Z","request_method":"POST","endpoint":"/api/users?active=true","response_status":503}
+{"timestamp":"2026-06-29T10:00:03Z","method":"GET","url":"/health","status":404}
+{"timestamp":"2026-06-29T10:00:04Z","message":"missing request fields"}
+not json
