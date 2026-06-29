@@ -1,0 +1,5 @@
+# Pins the local Ruby version for consistent development and CI setup.
+# Connects to: README.md, GitHub Actions CI, local Ruby version managers.
+# Created: 2026-06-29
+
+3.4.0

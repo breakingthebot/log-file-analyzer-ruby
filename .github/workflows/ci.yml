@@ -22,5 +22,8 @@ jobs:
           ruby-version: "3.4"
           bundler-cache: true
 
+      - name: Prepare project
+        run: ruby bin/setup
+
       - name: Run tests
-        run: bundle exec ruby -Itests tests/services/log_parser_test.rb && bundle exec ruby -Itests tests/services/log_analyzer_test.rb && bundle exec ruby -Itests tests/utils/report_formatter_test.rb
+        run: ruby bin/test

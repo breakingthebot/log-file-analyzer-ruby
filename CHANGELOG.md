@@ -72,3 +72,9 @@
 - Add multi-series time buckets with `method` and `status-family` breakdown modes.
 - Extend text, JSON, CSV, and config handling to include per-bucket series summaries.
 - Add analyzer and formatter coverage for the richer trend output.
+
+## [0.13.0] - 2026-06-29
+
+- Add `bin/setup` and `bin/test` entry points for fresh-clone setup and full-suite execution.
+- Add integration coverage for the packaged `--version` executable path.
+- Pin the repo Ruby version and align the application version with the current release state.

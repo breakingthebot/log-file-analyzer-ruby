@@ -1,0 +1,35 @@
+#!/usr/bin/env ruby
+# Runs the full automated test suite for the Ruby log file analyzer project.
+# Connects to: tests/, README.md, GitHub Actions CI.
+# Created: 2026-06-29
+
+require "rbconfig"
+
+module LogFileAnalyzer
+  module Bin
+    module Test
+      module_function
+
+      # Executes every test file under tests/ and exits nonzero on the first failure.
+      # @return [void]
+      def run
+        Dir.chdir(project_root)
+        exit(1) unless test_file_paths.all? { |test_file_path| system(RbConfig.ruby, "-Itests", test_file_path) }
+      end
+
+      # Resolves the repository root for test execution.
+      # @return [String]
+      def project_root
+        File.expand_path("..", __dir__)
+      end
+
+      # Collects every test file in stable order.
+      # @return [Array<String>]
+      def test_file_paths
+        Dir.glob(File.join(project_root, "tests", "**", "*_test.rb")).sort
+      end
+    end
+  end
+end
+
+LogFileAnalyzer::Bin::Test.run

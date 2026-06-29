@@ -1,0 +1,47 @@
+#!/usr/bin/env ruby
+# Bootstraps local development for the Ruby log file analyzer project.
+# Connects to: Gemfile, tmp/, log/, README.md, GitHub Actions docs.
+# Created: 2026-06-29
+
+require "fileutils"
+require "rbconfig"
+
+module LogFileAnalyzer
+  module Bin
+    module Setup
+      module_function
+
+      # Installs dependencies and prepares local working directories.
+      # @return [void]
+      def run
+        Dir.chdir(project_root)
+        FileUtils.mkdir_p(%w[tmp log])
+        configure_local_bundle_path!
+        success = system(bundle_command, "install")
+        abort("bundle install failed") unless success
+      end
+
+      # Resolves the repository root for setup commands.
+      # @return [String]
+      def project_root
+        File.expand_path("..", __dir__)
+      end
+
+      # Forces Bundler to install gems inside the repository for predictable setup.
+      # @return [void]
+      def configure_local_bundle_path!
+        success = system(bundle_command, "config", "set", "--local", "path", "vendor/bundle")
+        abort("bundle config failed") unless success
+      end
+
+      # Resolves the Bundler executable for the active Ruby installation.
+      # @return [String]
+      def bundle_command
+        executable_name = Gem.win_platform? ? "bundle.bat" : "bundle"
+        File.join(RbConfig::CONFIG["bindir"], executable_name)
+      end
+    end
+  end
+end
+
+LogFileAnalyzer::Bin::Setup.run
