@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    log-file-analyzer (0.13.0)
+    log-file-analyzer (0.14.0)
 
 GEM
   remote: https://rubygems.org/

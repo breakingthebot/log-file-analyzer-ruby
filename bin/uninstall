@@ -1,0 +1,45 @@
+#!/usr/bin/env ruby
+# Removes the repo-local packaged CLI install and temporary gem artifacts.
+# Connects to: bin/install, src/utils/local_gem_installation.rb, README.md.
+# Created: 2026-06-29
+
+require "fileutils"
+
+$LOAD_PATH.unshift(File.expand_path("../src", __dir__))
+
+require "config/version"
+require "utils/local_gem_installation"
+
+module LogFileAnalyzer
+  module Bin
+    # Removes the repo-local gem install without touching global Ruby state.
+    module Uninstall
+      module_function
+
+      # Removes the local install directories and built package artifact.
+      # @return [void]
+      def run
+        Dir.chdir(project_root)
+        cleanup_paths!
+      end
+
+      # Resolves the repository root.
+      # @return [String]
+      def project_root
+        LogFileAnalyzer::Utils::LocalGemInstallation.project_root
+      end
+
+      # Removes remaining local package and executable directories.
+      # @return [void]
+      def cleanup_paths!
+        FileUtils.rm_f(LogFileAnalyzer::Utils::LocalGemInstallation.package_path)
+        FileUtils.rm_rf(LogFileAnalyzer::Utils::LocalGemInstallation.executable_directory)
+        FileUtils.rm_rf(LogFileAnalyzer::Utils::LocalGemInstallation.install_directory)
+        FileUtils.rm_rf(LogFileAnalyzer::Utils::LocalGemInstallation.home_directory)
+        FileUtils.rm_rf(File.dirname(LogFileAnalyzer::Utils::LocalGemInstallation.spec_cache_directory))
+      end
+    end
+  end
+end
+
+LogFileAnalyzer::Bin::Uninstall.run

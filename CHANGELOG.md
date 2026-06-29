@@ -78,3 +78,9 @@
 - Add `bin/setup` and `bin/test` entry points for fresh-clone setup and full-suite execution.
 - Add integration coverage for the packaged `--version` executable path.
 - Pin the repo Ruby version and align the application version with the current release state.
+
+## [0.14.0] - 2026-06-29
+
+- Add `bin/install` and `bin/uninstall` for repo-local packaged gem install and cleanup flows.
+- Add a shared local-install path helper so packaging scripts and tests use the same locations.
+- Add integration coverage that installs the gem and verifies the installed command can report its version.

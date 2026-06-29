@@ -33,6 +33,12 @@ No environment variables are required for iteration 1. See `.env.example`.
 13. Optional JSON report output: `bundle exec exe/log-file-analyzer --format json tests/fixtures/server.log`.
 14. Run the full automated suite with `ruby bin/test` to execute every file under `tests/`.
 
+## Installing The Packaged CLI
+1. Run `ruby bin/install`.
+2. Run the installed command from `tmp/bin/log-file-analyzer --version` on macOS/Linux or `tmp\bin\log-file-analyzer.bat --version` on Windows.
+3. Run the installed command against a fixture log, for example `tmp\bin\log-file-analyzer.bat tests\fixtures\server.log` on Windows.
+4. Remove the repo-local install with `ruby bin/uninstall`.
+
 ## Deployed
 Not deployed. This is a local CLI tool.
 
@@ -45,9 +51,12 @@ The next pass added multi-series time buckets so each trend interval can explain
 
 This iteration tightened the install and handoff story so a fresh clone behaves more like a normal Ruby CLI project instead of a one-off script. The repo now ships with a standard setup command, a single test entry point, a pinned Ruby version file, and a version flag that matches the actual release state, which makes local onboarding, CI, and portfolio demos much less error-prone.
 
+This pass added a real packaged install demo path without touching the machine's global gem state. The project can now build itself, install into repo-local `tmp/` directories, run as an installed command, and clean itself up again, which makes the gem story much easier to show in an interview or hand to someone reviewing the repo.
+
 ## Notes
 - The CLI supports `common`, `json`, and `auto` input modes.
 - The repo includes `ruby bin/setup` for dependency bootstrap and `ruby bin/test` for the full test suite.
+- The repo includes `ruby bin/install` and `ruby bin/uninstall` for a repo-local packaged CLI workflow.
 - The CLI accepts one or more file paths, or a directory containing `.log` and `.jsonl` files.
 - The CLI supports `text`, `json`, and `csv` output formats.
 - The CLI can load defaults from `.log-file-analyzer.yml` or a custom path passed through `--config`.

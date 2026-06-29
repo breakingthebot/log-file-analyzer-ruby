@@ -1,0 +1,111 @@
+#!/usr/bin/env ruby
+# Builds and installs the CLI gem into repo-local directories for demo use.
+# Connects to: log-file-analyzer.gemspec, src/utils/local_gem_installation.rb, README.md.
+# Created: 2026-06-29
+
+require "fileutils"
+require "shellwords"
+
+$LOAD_PATH.unshift(File.expand_path("../src", __dir__))
+
+require "config/version"
+require "utils/local_gem_installation"
+
+module LogFileAnalyzer
+  module Bin
+    # Packages and installs the CLI without touching the user's global gem home.
+    module Install
+      module_function
+
+      # Builds the gem and installs it into the repo-local demo directories.
+      # @return [void]
+      def run
+        Dir.chdir(project_root)
+        LogFileAnalyzer::Utils::LocalGemInstallation.prepare_directories!
+        build_package!
+        install_package!
+        write_launcher!
+        puts "Installed command: #{LogFileAnalyzer::Utils::LocalGemInstallation.executable_path}"
+      end
+
+      # Resolves the repository root.
+      # @return [String]
+      def project_root
+        LogFileAnalyzer::Utils::LocalGemInstallation.project_root
+      end
+
+      # Builds the gem into the repo-local package directory.
+      # @return [void]
+      def build_package!
+        FileUtils.rm_f(LogFileAnalyzer::Utils::LocalGemInstallation.package_path)
+        success = system(
+          LogFileAnalyzer::Utils::LocalGemInstallation.gem_environment,
+          LogFileAnalyzer::Utils::LocalGemInstallation.gem_command,
+          "build",
+          "log-file-analyzer.gemspec",
+          "--output",
+          LogFileAnalyzer::Utils::LocalGemInstallation.package_path
+        )
+        abort("gem build failed") unless success
+      end
+
+      # Installs the built gem into repo-local directories.
+      # @return [void]
+      def install_package!
+        Dir.chdir(LogFileAnalyzer::Utils::LocalGemInstallation.package_directory) do
+          success = system(
+            LogFileAnalyzer::Utils::LocalGemInstallation.gem_environment,
+            LogFileAnalyzer::Utils::LocalGemInstallation.gem_command,
+            "install",
+            LogFileAnalyzer::Utils::LocalGemInstallation.package_file_name,
+            "--local",
+            "--install-dir",
+            LogFileAnalyzer::Utils::LocalGemInstallation.install_directory,
+            "--bindir",
+            LogFileAnalyzer::Utils::LocalGemInstallation.executable_directory,
+            "--no-document",
+            "--force"
+          )
+          abort("gem install failed") unless success
+        end
+      end
+
+      # Writes a launcher that always targets the active Ruby runtime explicitly.
+      # @return [void]
+      def write_launcher!
+        Gem.win_platform? ? write_windows_launcher! : write_unix_launcher!
+      end
+
+      # Writes a Windows batch launcher that uses the active Ruby executable.
+      # @return [void]
+      def write_windows_launcher!
+        launcher_text = <<~BATCH
+          @echo off
+          set "HOME=#{LogFileAnalyzer::Utils::LocalGemInstallation.home_directory}"
+          set "USERPROFILE=#{LogFileAnalyzer::Utils::LocalGemInstallation.home_directory}"
+          set "GEM_SPEC_CACHE=#{LogFileAnalyzer::Utils::LocalGemInstallation.spec_cache_directory}"
+          set "XDG_CACHE_HOME=#{File.join(project_root, 'tmp', 'cache')}"
+          "#{LogFileAnalyzer::Utils::LocalGemInstallation.ruby_command}" "#{LogFileAnalyzer::Utils::LocalGemInstallation.installed_source_executable_path}" %*
+        BATCH
+        File.write(LogFileAnalyzer::Utils::LocalGemInstallation.executable_path, launcher_text)
+      end
+
+      # Writes a Unix launcher that uses the active Ruby executable.
+      # @return [void]
+      def write_unix_launcher!
+        launcher_text = <<~SH
+          #!/usr/bin/env sh
+          export HOME=#{Shellwords.escape(LogFileAnalyzer::Utils::LocalGemInstallation.home_directory)}
+          export USERPROFILE=#{Shellwords.escape(LogFileAnalyzer::Utils::LocalGemInstallation.home_directory)}
+          export GEM_SPEC_CACHE=#{Shellwords.escape(LogFileAnalyzer::Utils::LocalGemInstallation.spec_cache_directory)}
+          export XDG_CACHE_HOME=#{Shellwords.escape(File.join(project_root, "tmp", "cache"))}
+          exec #{Shellwords.escape(LogFileAnalyzer::Utils::LocalGemInstallation.ruby_command)} #{Shellwords.escape(LogFileAnalyzer::Utils::LocalGemInstallation.installed_source_executable_path)} "$@"
+        SH
+        File.write(LogFileAnalyzer::Utils::LocalGemInstallation.executable_path, launcher_text)
+        FileUtils.chmod("+x", LogFileAnalyzer::Utils::LocalGemInstallation.executable_path)
+      end
+    end
+  end
+end
+
+LogFileAnalyzer::Bin::Install.run
