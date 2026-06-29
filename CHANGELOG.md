@@ -30,3 +30,9 @@
 - Add batch analysis for multiple input files and directories.
 - Expand directories into sorted supported log files (`.log` and `.jsonl`) and deduplicate repeated paths.
 - Add parser and path-resolution coverage for combined file processing.
+
+## [0.6.0] - 2026-06-29
+
+- Add CSV output support through `--format csv`.
+- Export summary metrics, breakdown sections, and top endpoints in a machine-friendly row format.
+- Add formatter coverage for CSV rendering.

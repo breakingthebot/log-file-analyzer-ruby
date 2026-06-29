@@ -61,7 +61,7 @@ module LogFileAnalyzer
       parser = OptionParser.new do |opts|
         opts.banner = "Usage: log-file-analyzer [options] LOG_PATH [LOG_PATH ...]"
 
-        opts.on("--format FORMAT", %w[text json], "Output format: text or json") do |format|
+        opts.on("--format FORMAT", %w[text json csv], "Output format: text, json, or csv") do |format|
           options[:format] = format
         end
 

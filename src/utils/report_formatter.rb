@@ -1,7 +1,8 @@
-# Formats analyzer output for terminal and JSON consumers.
+# Formats analyzer output for terminal, JSON, and CSV consumers.
 # Connects to: src/main.rb, src/services/log_analyzer.rb.
 # Created: 2026-06-29
 
+require "csv"
 require "json"
 
 module LogFileAnalyzer
@@ -16,12 +17,14 @@ module LogFileAnalyzer
         @top_limit = top_limit
       end
 
-      # Formats a report as either text or JSON.
+      # Formats a report as text, JSON, or CSV.
       # @param summary [Hash] analyzer summary
       # @param format [String] output format name
       # @return [String]
       def format(summary, format:)
         case format
+        when "csv"
+          build_csv_report(summary)
         when "json"
           JSON.pretty_generate(summary.merge("top_endpoints" => limited_endpoints(summary)))
         when "text"
@@ -73,6 +76,35 @@ module LogFileAnalyzer
         end
 
         lines.empty? ? "  - No data found" : lines.join("\n")
+      end
+
+      # Builds a machine-friendly CSV report with sectioned rows.
+      # @param summary [Hash] analyzer summary
+      # @return [String]
+      def build_csv_report(summary)
+        CSV.generate do |csv|
+          csv << %w[section label requests value]
+          csv << ["summary", "total_requests", nil, summary.fetch("total_requests")]
+          csv << ["summary", "error_requests", nil, summary.fetch("error_requests")]
+          csv << ["summary", "error_rate", nil, summary.fetch("error_rate")]
+          append_breakdown_rows(csv, "methods", summary.fetch("methods"))
+          append_breakdown_rows(csv, "status_families", summary.fetch("status_families"))
+          append_breakdown_rows(csv, "status_codes", summary.fetch("status_codes"))
+          limited_endpoints(summary).each do |endpoint|
+            csv << ["top_endpoints", endpoint.fetch("endpoint"), endpoint.fetch("requests"), nil]
+          end
+        end
+      end
+
+      # Appends generic breakdown rows to the CSV output.
+      # @param csv [CSV] csv builder
+      # @param section [String] breakdown section name
+      # @param breakdown [Array<Hash>] summary breakdown entries
+      # @return [void]
+      def append_breakdown_rows(csv, section, breakdown)
+        breakdown.each do |entry|
+          csv << [section, entry.fetch("label"), entry.fetch("requests"), nil]
+        end
       end
     end
   end

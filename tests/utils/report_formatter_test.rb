@@ -3,6 +3,7 @@
 # Created: 2026-06-29
 
 require_relative "../test_helper"
+require "csv"
 require "json"
 
 module LogFileAnalyzer
@@ -35,6 +36,24 @@ module LogFileAnalyzer
         assert_equal "/api/users", report["top_endpoints"].first["endpoint"]
         assert_equal "GET", report["methods"].first["label"]
         assert_equal "200", report["status_codes"].first["label"]
+      end
+
+      # Verifies CSV output includes summary and breakdown rows.
+      # @return [void]
+      def test_csv_format_renders_sectioned_rows
+        formatter = ReportFormatter.new(top_limit: 1)
+
+        rows = CSV.parse(formatter.format(sample_summary, format: "csv"), headers: true)
+
+        assert_equal ["section", "label", "requests", "value"], rows.headers
+        assert_equal "summary", rows[0]["section"]
+        assert_equal "total_requests", rows[0]["label"]
+        assert_equal "3", rows[0]["value"]
+        assert_equal "methods", rows[3]["section"]
+        assert_equal "GET", rows[3]["label"]
+        assert_equal "2", rows[3]["requests"]
+        assert_equal "top_endpoints", rows[-1]["section"]
+        assert_equal "/api/users", rows[-1]["label"]
       end
 
       private
