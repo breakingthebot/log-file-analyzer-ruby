@@ -60,3 +60,9 @@
 - Add `--output` support for writing rendered reports directly to disk.
 - Allow config files to define a default output path.
 - Add unit and integration coverage for file-based report output.
+
+## [0.11.0] - 2026-06-29
+
+- Tighten config validation for unsupported keys and invalid option values.
+- Validate `format`, `input_format`, `input_paths`, and `output_path` directly in the config loader.
+- Add fixture coverage for bad config shapes and clearer error handling.

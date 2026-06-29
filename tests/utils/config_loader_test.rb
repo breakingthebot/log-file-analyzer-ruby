@@ -30,6 +30,36 @@ module LogFileAnalyzer
         assert_equal "Config value for top must be a positive integer.", error.message
       end
 
+      # Verifies unsupported keys fail loudly instead of being ignored.
+      # @return [void]
+      def test_load_rejects_unsupported_keys
+        error = assert_raises(ArgumentError) do
+          ConfigLoader.new.load(fixture_path("config/unsupported-key.yml"))
+        end
+
+        assert_equal "Unsupported config keys: surprise_key.", error.message
+      end
+
+      # Verifies invalid format values fail with a clear error.
+      # @return [void]
+      def test_load_rejects_invalid_format_value
+        error = assert_raises(ArgumentError) do
+          ConfigLoader.new.load(fixture_path("config/invalid-format.yml"))
+        end
+
+        assert_equal "Config value for format must be one of: text, json, csv.", error.message
+      end
+
+      # Verifies invalid input path containers fail with a clear error.
+      # @return [void]
+      def test_load_rejects_invalid_input_paths_value
+        error = assert_raises(ArgumentError) do
+          ConfigLoader.new.load(fixture_path("config/invalid-input-paths.yml"))
+        end
+
+        assert_equal "Config value for input_paths must be a string or an array of strings.", error.message
+      end
+
       private
 
       # Resolves a fixture path for the current test suite.

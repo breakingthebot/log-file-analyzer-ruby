@@ -37,11 +37,14 @@ This build is a small command-line tool that takes a server log and turns it int
 
 In this iteration I added direct file output so the analyzer can participate in scripted workflows without shell redirection. The CLI now keeps stdout as the default, but it can also write the rendered report straight to a requested path, which makes CSV and JSON exports much easier to schedule or hand off to another step in a pipeline.
 
+The next pass tightened config validation so shared defaults fail loudly instead of being partially ignored. Unsupported keys, bad format values, invalid path containers, and blank output paths now raise explicit errors close to the config loader, which makes team-shared YAML files much easier to debug.
+
 ## Notes
 - The CLI supports `common`, `json`, and `auto` input modes.
 - The CLI accepts one or more file paths, or a directory containing `.log` and `.jsonl` files.
 - The CLI supports `text`, `json`, and `csv` output formats.
 - The CLI can load defaults from `.log-file-analyzer.yml` or a custom path passed through `--config`.
+- Config files reject unsupported keys and invalid option values with explicit errors.
 - The CLI supports `--time-bucket none|minute|hour` for trend summaries.
 - Auto input mode detects format per file inside batch runs.
 - The CLI supports `--output PATH` to write the rendered report directly to disk.
