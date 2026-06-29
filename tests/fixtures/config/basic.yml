@@ -1,0 +1,5 @@
+format: csv
+input_format: json
+top: 2
+input_paths:
+  - tests/fixtures/server.log

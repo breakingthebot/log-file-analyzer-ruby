@@ -6,6 +6,7 @@ AGENTS.md
 .env
 .env.*
 !.env.example
+!.log-file-analyzer.yml
 vendor/bundle/
 .bundle/
 coverage/

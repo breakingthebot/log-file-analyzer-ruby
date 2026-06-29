@@ -36,3 +36,9 @@
 - Add CSV output support through `--format csv`.
 - Export summary metrics, breakdown sections, and top endpoints in a machine-friendly row format.
 - Add formatter coverage for CSV rendering.
+
+## [0.7.0] - 2026-06-29
+
+- Add YAML config-file support for default CLI options.
+- Define precedence as built-in defaults, then config values, then explicit CLI flags.
+- Add loader and option-merging coverage for config-backed runs.
