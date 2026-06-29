@@ -10,7 +10,7 @@ module LogFileAnalyzer
     # Reads and normalizes supported config values from disk.
     class ConfigLoader
       DEFAULT_CONFIG_PATH = ".log-file-analyzer.yml"
-      ALLOWED_KEYS = %w[format input_format top start_time end_time input_paths time_bucket].freeze
+      ALLOWED_KEYS = %w[format input_format top start_time end_time input_paths time_bucket output_path].freeze
 
       # Loads config values from a YAML file when it exists.
       # @param config_path [String, nil] optional config path override

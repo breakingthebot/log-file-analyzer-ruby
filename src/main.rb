@@ -13,6 +13,7 @@ require_relative "services/time_window_filter"
 require_relative "utils/config_loader"
 require_relative "utils/input_path_resolver"
 require_relative "utils/logger_factory"
+require_relative "utils/output_writer"
 require_relative "utils/report_formatter"
 require_relative "utils/time_window_parser"
 
@@ -41,8 +42,8 @@ module LogFileAnalyzer
       )
       summary = Services::LogAnalyzer.new.summarize(filtered_entries, time_bucket: options[:time_bucket])
       report = Utils::ReportFormatter.new(top_limit: options[:top]).format(summary, format: options[:format])
-
-      puts report
+      output_path = Utils::OutputWriter.new.write(report, output_path: options[:output_path], logger: logger)
+      puts "Report written to #{output_path}" unless output_path.nil?
       0
     rescue OptionParser::ParseError, ArgumentError => e
       logger&.error(e.message)
@@ -89,6 +90,10 @@ module LogFileAnalyzer
 
         opts.on("--time-bucket BUCKET", LogFileAnalyzer::Config::TIME_BUCKET_OPTIONS, "Time bucket: none, minute, or hour") do |time_bucket|
           cli_options[:time_bucket] = time_bucket
+        end
+
+        opts.on("--output PATH", "Optional output file path for the rendered report") do |output_path|
+          cli_options[:output_path] = output_path
         end
 
         opts.on("--config PATH", "Optional YAML config file path") do |config_path|

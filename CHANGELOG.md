@@ -54,3 +54,9 @@
 - Add file-level format detection for mixed batch parsing in auto mode.
 - Detect parser modes from file extension first, then from sampled content when needed.
 - Add detector and mixed-batch coverage for common and JSON files with nonstandard extensions.
+
+## [0.10.0] - 2026-06-29
+
+- Add `--output` support for writing rendered reports directly to disk.
+- Allow config files to define a default output path.
+- Add unit and integration coverage for file-based report output.

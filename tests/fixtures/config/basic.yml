@@ -2,5 +2,6 @@ format: csv
 input_format: json
 top: 2
 time_bucket: minute
+output_path: reports/basic-report.csv
 input_paths:
   - tests/fixtures/server.log
