@@ -15,6 +15,7 @@ module LogFileAnalyzer
         assert_equal "csv", config[:format]
         assert_equal "json", config[:input_format]
         assert_equal 2, config[:top]
+        assert_equal "minute", config[:time_bucket]
         assert_equal ["tests/fixtures/server.log"], config[:input_paths]
       end
 

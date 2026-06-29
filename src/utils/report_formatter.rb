@@ -62,6 +62,8 @@ module LogFileAnalyzer
           build_breakdown_lines(summary.fetch("status_families")),
           "Status codes:",
           build_breakdown_lines(summary.fetch("status_codes")),
+          "Time buckets:",
+          build_time_bucket_lines(summary.fetch("time_buckets")),
           "Top endpoints:",
           (top_endpoints.empty? ? "  - No endpoints found" : top_endpoints.join("\n"))
         ].join("\n")
@@ -78,6 +80,17 @@ module LogFileAnalyzer
         lines.empty? ? "  - No data found" : lines.join("\n")
       end
 
+      # Builds text lines for time-bucket trend summaries.
+      # @param time_buckets [Array<Hash>] bucketed summary entries
+      # @return [String]
+      def build_time_bucket_lines(time_buckets)
+        lines = time_buckets.map do |entry|
+          "  - #{entry.fetch('label')}: #{entry.fetch('requests')} requests, #{entry.fetch('errors')} errors"
+        end
+
+        lines.empty? ? "  - No bucketed data found" : lines.join("\n")
+      end
+
       # Builds a machine-friendly CSV report with sectioned rows.
       # @param summary [Hash] analyzer summary
       # @return [String]
@@ -90,6 +103,7 @@ module LogFileAnalyzer
           append_breakdown_rows(csv, "methods", summary.fetch("methods"))
           append_breakdown_rows(csv, "status_families", summary.fetch("status_families"))
           append_breakdown_rows(csv, "status_codes", summary.fetch("status_codes"))
+          append_time_bucket_rows(csv, summary.fetch("time_buckets"))
           limited_endpoints(summary).each do |endpoint|
             csv << ["top_endpoints", endpoint.fetch("endpoint"), endpoint.fetch("requests"), nil]
           end
@@ -104,6 +118,16 @@ module LogFileAnalyzer
       def append_breakdown_rows(csv, section, breakdown)
         breakdown.each do |entry|
           csv << [section, entry.fetch("label"), entry.fetch("requests"), nil]
+        end
+      end
+
+      # Appends time-bucket rows to the CSV output.
+      # @param csv [CSV] csv builder
+      # @param time_buckets [Array<Hash>] bucketed summary entries
+      # @return [void]
+      def append_time_bucket_rows(csv, time_buckets)
+        time_buckets.each do |entry|
+          csv << ["time_buckets", entry.fetch("label"), entry.fetch("requests"), entry.fetch("errors")]
         end
       end
     end

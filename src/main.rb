@@ -6,6 +6,7 @@ require "optparse"
 require "time"
 
 require_relative "config/version"
+require_relative "config/time_bucket_options"
 require_relative "services/log_parser"
 require_relative "services/log_analyzer"
 require_relative "services/time_window_filter"
@@ -38,7 +39,7 @@ module LogFileAnalyzer
         start_time: time_window[:start_time],
         end_time: time_window[:end_time]
       )
-      summary = Services::LogAnalyzer.new.summarize(filtered_entries)
+      summary = Services::LogAnalyzer.new.summarize(filtered_entries, time_bucket: options[:time_bucket])
       report = Utils::ReportFormatter.new(top_limit: options[:top]).format(summary, format: options[:format])
 
       puts report
@@ -56,6 +57,7 @@ module LogFileAnalyzer
       default_options = {
         format: "text",
         input_format: "auto",
+        time_bucket: "none",
         top: Utils::ReportFormatter::DEFAULT_TOP_LIMIT
       }
       cli_options = {}
@@ -83,6 +85,10 @@ module LogFileAnalyzer
           raise OptionParser::InvalidArgument, "Top count must be positive." if count <= 0
 
           cli_options[:top] = count
+        end
+
+        opts.on("--time-bucket BUCKET", LogFileAnalyzer::Config::TIME_BUCKET_OPTIONS, "Time bucket: none, minute, or hour") do |time_bucket|
+          cli_options[:time_bucket] = time_bucket
         end
 
         opts.on("--config PATH", "Optional YAML config file path") do |config_path|

@@ -21,6 +21,7 @@ module LogFileAnalyzer
       assert_equal "json", options[:format]
       assert_equal "json", options[:input_format]
       assert_equal 3, options[:top]
+      assert_equal "minute", options[:time_bucket]
       assert_equal ["tests/fixtures/server.jsonl"], options[:input_paths]
     end
 

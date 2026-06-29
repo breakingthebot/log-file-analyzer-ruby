@@ -42,3 +42,9 @@
 - Add YAML config-file support for default CLI options.
 - Define precedence as built-in defaults, then config values, then explicit CLI flags.
 - Add loader and option-merging coverage for config-backed runs.
+
+## [0.8.0] - 2026-06-29
+
+- Add time-bucket summaries with `none`, `minute`, and `hour` modes.
+- Extend text, JSON, and CSV output to include chronological request/error bucket rows.
+- Add analyzer, formatter, config, and CLI coverage for trend summaries.

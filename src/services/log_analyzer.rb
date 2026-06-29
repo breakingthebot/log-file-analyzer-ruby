@@ -2,6 +2,8 @@
 # Connects to: src/models/log_entry.rb, src/utils/report_formatter.rb.
 # Created: 2026-06-29
 
+require "time"
+
 module LogFileAnalyzer
   module Services
     # Calculates request totals, error rates, and endpoint rankings.
@@ -11,8 +13,9 @@ module LogFileAnalyzer
 
       # Builds a summary hash from parsed log entries.
       # @param entries [Array<LogEntry>] parsed log entries
+      # @param time_bucket [String] bucket mode: none, minute, or hour
       # @return [Hash]
-      def summarize(entries)
+      def summarize(entries, time_bucket: "none")
         total_requests = entries.length
         error_requests = entries.count { |entry| error_status?(entry.status_code) }
         endpoint_counts = entries.each_with_object(Hash.new(0)) do |entry, counts|
@@ -35,6 +38,7 @@ module LogFileAnalyzer
           "methods" => build_breakdown(method_counts),
           "status_families" => build_breakdown(status_family_counts),
           "status_codes" => build_breakdown(status_code_counts),
+          "time_buckets" => build_time_buckets(entries, time_bucket: time_bucket),
           "top_endpoints" => endpoint_counts
             .sort_by { |endpoint, count| [-count, endpoint] }
             .map { |endpoint, count| { "endpoint" => endpoint, "requests" => count } }
@@ -74,6 +78,49 @@ module LogFileAnalyzer
         counts
           .sort_by { |label, count| [-count, label.to_s] }
           .map { |label, count| { "label" => label.to_s, "requests" => count } }
+      end
+
+      # Builds a chronological request/error series for the selected bucket mode.
+      # @param entries [Array<LogEntry>] parsed log entries
+      # @param time_bucket [String] bucket mode
+      # @return [Array<Hash>]
+      def build_time_buckets(entries, time_bucket:)
+        return [] if time_bucket == "none"
+
+        bucket_counts = entries.each_with_object(Hash.new { |hash, key| hash[key] = { requests: 0, errors: 0 } }) do |entry, counts|
+          next if entry.timestamp.nil?
+
+          bucket_label = format_time_bucket(entry.timestamp, time_bucket)
+          counts[bucket_label][:requests] += 1
+          counts[bucket_label][:errors] += 1 if error_status?(entry.status_code)
+        end
+
+        bucket_counts
+          .sort_by { |label, _counts| label }
+          .map do |label, counts|
+            {
+              "label" => label,
+              "requests" => counts[:requests],
+              "errors" => counts[:errors]
+            }
+          end
+      end
+
+      # Formats a timestamp into the selected bucket label.
+      # @param timestamp [Time] entry timestamp
+      # @param time_bucket [String] bucket mode
+      # @return [String]
+      def format_time_bucket(timestamp, time_bucket)
+        utc_time = timestamp.utc
+
+        case time_bucket
+        when "minute"
+          utc_time.strftime("%Y-%m-%dT%H:%M:00Z")
+        when "hour"
+          utc_time.strftime("%Y-%m-%dT%H:00:00Z")
+        else
+          raise ArgumentError, "Unsupported time bucket: #{time_bucket}"
+        end
       end
     end
   end

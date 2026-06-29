@@ -22,6 +22,8 @@ module LogFileAnalyzer
         assert_includes report, "  - GET: 2 requests"
         assert_includes report, "Status families:"
         assert_includes report, "  - 2xx: 2 requests"
+        assert_includes report, "Time buckets:"
+        assert_includes report, "  - 2026-06-29T10:00:00Z: 2 requests, 0 errors"
         assert_includes report, "  - /api/users: 2 requests"
       end
 
@@ -36,6 +38,7 @@ module LogFileAnalyzer
         assert_equal "/api/users", report["top_endpoints"].first["endpoint"]
         assert_equal "GET", report["methods"].first["label"]
         assert_equal "200", report["status_codes"].first["label"]
+        assert_equal "2026-06-29T10:00:00Z", report["time_buckets"].first["label"]
       end
 
       # Verifies CSV output includes summary and breakdown rows.
@@ -52,6 +55,10 @@ module LogFileAnalyzer
         assert_equal "methods", rows[3]["section"]
         assert_equal "GET", rows[3]["label"]
         assert_equal "2", rows[3]["requests"]
+        time_bucket_row = rows.find { |row| row["section"] == "time_buckets" }
+        refute_nil time_bucket_row
+        assert_equal "2026-06-29T10:00:00Z", time_bucket_row["label"]
+        assert_equal "0", time_bucket_row["value"]
         assert_equal "top_endpoints", rows[-1]["section"]
         assert_equal "/api/users", rows[-1]["label"]
       end
@@ -76,6 +83,10 @@ module LogFileAnalyzer
           "status_codes" => [
             { "label" => "200", "requests" => 2 },
             { "label" => "500", "requests" => 1 }
+          ],
+          "time_buckets" => [
+            { "label" => "2026-06-29T10:00:00Z", "requests" => 2, "errors" => 0 },
+            { "label" => "2026-06-29T10:01:00Z", "requests" => 1, "errors" => 1 }
           ],
           "top_endpoints" => [
             { "endpoint" => "/api/users", "requests" => 2 },

@@ -3,13 +3,14 @@
 # Created: 2026-06-29
 
 require "yaml"
+require_relative "../config/time_bucket_options"
 
 module LogFileAnalyzer
   module Utils
     # Reads and normalizes supported config values from disk.
     class ConfigLoader
       DEFAULT_CONFIG_PATH = ".log-file-analyzer.yml"
-      ALLOWED_KEYS = %w[format input_format top start_time end_time input_paths].freeze
+      ALLOWED_KEYS = %w[format input_format top start_time end_time input_paths time_bucket].freeze
 
       # Loads config values from a YAML file when it exists.
       # @param config_path [String, nil] optional config path override
@@ -42,6 +43,7 @@ module LogFileAnalyzer
 
         normalize_input_paths!(config)
         normalize_top!(config)
+        normalize_time_bucket!(config)
         config
       end
 
@@ -64,6 +66,18 @@ module LogFileAnalyzer
         raise ArgumentError, "Config value for top must be a positive integer." if config[:top] <= 0
       rescue ArgumentError, TypeError
         raise ArgumentError, "Config value for top must be a positive integer."
+      end
+
+      # Validates the configured time bucket value.
+      # @param config [Hash] config hash being normalized
+      # @return [void]
+      def normalize_time_bucket!(config)
+        return unless config.key?(:time_bucket)
+
+        config[:time_bucket] = config[:time_bucket].to_s
+        return if LogFileAnalyzer::Config::TIME_BUCKET_OPTIONS.include?(config[:time_bucket])
+
+        raise ArgumentError, "Config value for time_bucket must be one of: #{LogFileAnalyzer::Config::TIME_BUCKET_OPTIONS.join(', ')}."
       end
     end
   end

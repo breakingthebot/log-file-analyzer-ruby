@@ -5,6 +5,7 @@
 format: text
 input_format: auto
 top: 5
+time_bucket: none
 # start_time: 2026-06-29T10:00:00Z
 # end_time: 2026-06-29T11:00:00Z
 # input_paths:
