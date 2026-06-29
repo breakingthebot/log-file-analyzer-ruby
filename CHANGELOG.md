@@ -24,3 +24,9 @@
 - Add request breakdowns by HTTP method, status family, and exact status code.
 - Extend text and JSON reports to expose the new breakdown sections.
 - Add analyzer and formatter coverage for the richer summary structure.
+
+## [0.5.0] - 2026-06-29
+
+- Add batch analysis for multiple input files and directories.
+- Expand directories into sorted supported log files (`.log` and `.jsonl`) and deduplicate repeated paths.
+- Add parser and path-resolution coverage for combined file processing.

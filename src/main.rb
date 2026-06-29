@@ -9,8 +9,8 @@ require_relative "config/version"
 require_relative "services/log_parser"
 require_relative "services/log_analyzer"
 require_relative "services/time_window_filter"
+require_relative "utils/input_path_resolver"
 require_relative "utils/logger_factory"
-require_relative "utils/path_validator"
 require_relative "utils/report_formatter"
 require_relative "utils/time_window_parser"
 
@@ -25,13 +25,13 @@ module LogFileAnalyzer
     def run(argv)
       logger = Utils.build_logger
       options = parse_options(argv)
-      file_path = Utils.validate_log_file!(options[:file_path], logger: logger)
+      file_paths = Utils::InputPathResolver.new.resolve!(options[:input_paths], logger: logger)
       time_window = Utils::TimeWindowParser.new.parse(
         start_time_text: options[:start_time],
         end_time_text: options[:end_time]
       )
 
-      entries = Services::LogParser.new(logger: logger, input_format: options[:input_format]).parse_file(file_path)
+      entries = Services::LogParser.new(logger: logger, input_format: options[:input_format]).parse_files(file_paths)
       filtered_entries = Services::TimeWindowFilter.new.filter(
         entries,
         start_time: time_window[:start_time],
@@ -59,7 +59,7 @@ module LogFileAnalyzer
       }
 
       parser = OptionParser.new do |opts|
-        opts.banner = "Usage: log-file-analyzer [options] LOG_FILE"
+        opts.banner = "Usage: log-file-analyzer [options] LOG_PATH [LOG_PATH ...]"
 
         opts.on("--format FORMAT", %w[text json], "Output format: text or json") do |format|
           options[:format] = format
@@ -95,7 +95,7 @@ module LogFileAnalyzer
       end
 
       remaining = parser.parse(argv)
-      options[:file_path] = remaining.first
+      options[:input_paths] = remaining
       options
     end
   end

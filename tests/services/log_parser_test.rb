@@ -50,6 +50,24 @@ module LogFileAnalyzer
         assert_equal "/health", entries.last.endpoint
       end
 
+      # Verifies multiple files can be parsed into one combined entry list.
+      # @return [void]
+      def test_parse_files_combines_entries_from_multiple_files
+        logger = Utils.build_logger(stream: StringIO.new)
+        parser = LogParser.new(logger: logger, input_format: "auto")
+
+        entries = parser.parse_files(
+          [
+            fixture_path("batch/common-a.log"),
+            fixture_path("batch/common-b.log"),
+            fixture_path("batch/structured.jsonl")
+          ]
+        )
+
+        assert_equal 5, entries.length
+        assert_equal ["/", "/api/users", "/api/users", "/health", "/api/admin"], entries.map(&:endpoint)
+      end
+
       private
 
       # Resolves a fixture path for the current test suite.

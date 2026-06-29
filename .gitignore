@@ -12,7 +12,7 @@ coverage/
 tmp/
 log/
 *.log
-!tests/fixtures/*.log
+!tests/fixtures/**/*.log
 *.tmp
 .DS_Store
 node_modules/

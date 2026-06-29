@@ -32,6 +32,13 @@ module LogFileAnalyzer
         entries
       end
 
+      # Parses multiple log files into one combined entry list.
+      # @param file_paths [Array<String>] paths to the log files
+      # @return [Array<LogEntry>]
+      def parse_files(file_paths)
+        file_paths.flat_map { |file_path| parse_file(file_path) }
+      end
+
       private
 
       # Parses one log line into a LogEntry.
