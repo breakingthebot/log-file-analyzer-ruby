@@ -1,0 +1,26 @@
+# GitHub Actions workflow for the Ruby log file analyzer test suite.
+# Connects to: Gemfile, tests/, GitHub CI.
+# Created: 2026-06-29
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+          bundler-cache: true
+
+      - name: Run tests
+        run: bundle exec ruby -Itests tests/services/log_parser_test.rb && bundle exec ruby -Itests tests/services/log_analyzer_test.rb && bundle exec ruby -Itests tests/utils/report_formatter_test.rb

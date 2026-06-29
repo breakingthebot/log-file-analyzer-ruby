@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+# CLI executable wrapper for the Ruby log file analyzer.
+# Connects to: src/main.rb.
+# Created: 2026-06-29
+
+$LOAD_PATH.unshift(File.expand_path("../src", __dir__))
+
+require "main"
+
+exit(LogFileAnalyzer::Main.run(ARGV))

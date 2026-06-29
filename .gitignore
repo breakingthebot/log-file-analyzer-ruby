@@ -1,0 +1,20 @@
+# Repository ignore rules for the Ruby log file analyzer project.
+# Connects to: git, local development tooling, AGENTS.md handling.
+# Created: 2026-06-29
+
+AGENTS.md
+.env
+.env.*
+!.env.example
+vendor/bundle/
+.bundle/
+coverage/
+tmp/
+log/
+*.log
+!tests/fixtures/*.log
+*.tmp
+.DS_Store
+node_modules/
+dist/
+build/
