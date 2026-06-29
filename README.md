@@ -25,7 +25,8 @@ No environment variables are required for iteration 1. See `.env.example`.
 6. Run `bundle exec ruby -Isrc exe/log-file-analyzer --config .log-file-analyzer.yml`.
 7. Run `bundle exec ruby -Isrc exe/log-file-analyzer --time-bucket minute tests/fixtures/server.log`.
 8. Optional filtered run: `bundle exec ruby -Isrc exe/log-file-analyzer --start-time 2026-06-29T10:00:01Z --end-time 2026-06-29T10:00:03Z tests/fixtures/server.log`.
-9. Optional JSON report output: `bundle exec ruby -Isrc exe/log-file-analyzer --format json tests/fixtures/server.log`.
+9. Run `bundle exec ruby -Isrc exe/log-file-analyzer tests/fixtures/batch/mixed/common-mixed.data tests/fixtures/batch/mixed/json-mixed.data`.
+10. Optional JSON report output: `bundle exec ruby -Isrc exe/log-file-analyzer --format json tests/fixtures/server.log`.
 
 ## Deployed
 Not deployed. This is a local CLI tool.
@@ -33,7 +34,7 @@ Not deployed. This is a local CLI tool.
 ## Architecture Notes
 This build is a small command-line tool that takes a server log and turns it into something immediately useful: how many requests came in, how many failed, which kinds of requests they were, and which endpoints got hit the most. I split it into a parser, an analyzer, and a formatter so each part has one job, which makes the behavior easier to test and easier to extend later if the log format or output needs change.
 
-In this iteration I added time-bucket summaries so the analyzer can show how traffic and errors change over time instead of only listing totals. The CLI now supports `minute` and `hour` buckets, and the report includes chronological request and error counts for each bucket. That makes the tool more useful during incident review because trend shape often matters as much as the total count.
+In this iteration I made batch auto mode choose a parser per file instead of assuming one detection strategy applies to every file in the run. That matters because real log folders often mix structured app logs and classic web-server logs. By detecting per file, the CLI can analyze a messier directory without forcing the user to split it first.
 
 ## Notes
 - The CLI supports `common`, `json`, and `auto` input modes.
@@ -41,6 +42,7 @@ In this iteration I added time-bucket summaries so the analyzer can show how tra
 - The CLI supports `text`, `json`, and `csv` output formats.
 - The CLI can load defaults from `.log-file-analyzer.yml` or a custom path passed through `--config`.
 - The CLI supports `--time-bucket none|minute|hour` for trend summaries.
+- Auto input mode detects format per file inside batch runs.
 - Time filters use inclusive ISO 8601 values such as `2026-06-29T10:00:00Z`.
 - Reports include method counts, status-family counts, and exact status-code counts.
 - Query strings are removed before endpoint aggregation so the same route is counted consistently.

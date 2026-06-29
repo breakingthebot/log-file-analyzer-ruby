@@ -68,6 +68,23 @@ module LogFileAnalyzer
         assert_equal ["/", "/api/users", "/api/users", "/health", "/api/admin"], entries.map(&:endpoint)
       end
 
+      # Verifies auto mode can choose different parser modes for different files in one batch.
+      # @return [void]
+      def test_parse_files_auto_detects_mixed_batch_per_file
+        logger = Utils.build_logger(stream: StringIO.new)
+        parser = LogParser.new(logger: logger, input_format: "auto")
+
+        entries = parser.parse_files(
+          [
+            fixture_path("batch/mixed/common-mixed.data"),
+            fixture_path("batch/mixed/json-mixed.data")
+          ]
+        )
+
+        assert_equal 4, entries.length
+        assert_equal ["/reports", "/reports", "/events", "/events"], entries.map(&:endpoint)
+      end
+
       private
 
       # Resolves a fixture path for the current test suite.

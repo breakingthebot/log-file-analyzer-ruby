@@ -48,3 +48,9 @@
 - Add time-bucket summaries with `none`, `minute`, and `hour` modes.
 - Extend text, JSON, and CSV output to include chronological request/error bucket rows.
 - Add analyzer, formatter, config, and CLI coverage for trend summaries.
+
+## [0.9.0] - 2026-06-29
+
+- Add file-level format detection for mixed batch parsing in auto mode.
+- Detect parser modes from file extension first, then from sampled content when needed.
+- Add detector and mixed-batch coverage for common and JSON files with nonstandard extensions.

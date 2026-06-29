@@ -1,0 +1,2 @@
+{"timestamp":"2026-06-29T10:06:00Z","method":"GET","path":"/events","status":200}
+{"timestamp":"2026-06-29T10:06:30Z","method":"POST","path":"/events","status":503}
