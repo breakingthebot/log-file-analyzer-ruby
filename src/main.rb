@@ -10,6 +10,7 @@ require_relative "config/time_bucket_options"
 require_relative "config/time_bucket_series_options"
 require_relative "services/log_parser"
 require_relative "services/log_analyzer"
+require_relative "services/threshold_evaluator"
 require_relative "services/time_window_filter"
 require_relative "utils/config_loader"
 require_relative "utils/input_path_resolver"
@@ -22,6 +23,8 @@ module LogFileAnalyzer
   # Coordinates CLI argument parsing and report generation.
   module Main
     module_function
+
+    THRESHOLD_FAILURE_EXIT_CODE = Services::ThresholdEvaluator::THRESHOLD_EXIT_CODE
 
     # Runs the CLI with the provided arguments.
     # @param argv [Array<String>] command line arguments
@@ -50,7 +53,12 @@ module LogFileAnalyzer
       report = Utils::ReportFormatter.new(top_limit: options[:top]).format(summary, format: options[:format])
       output_path = Utils::OutputWriter.new.write(report, output_path: options[:output_path], logger: logger)
       puts "Report written to #{output_path}" unless output_path.nil?
-      0
+      threshold_result = Services::ThresholdEvaluator.new.evaluate(summary, options)
+      if threshold_result[:exceeded]
+        logger.warn(threshold_result[:message])
+        warn(threshold_result[:message])
+      end
+      threshold_result[:exit_code]
     rescue OptionParser::ParseError, ArgumentError => e
       logger&.error(e.message)
       warn(e.message)
@@ -105,6 +113,24 @@ module LogFileAnalyzer
 
         opts.on("--output PATH", "Optional output file path for the rendered report") do |output_path|
           cli_options[:output_path] = output_path
+        end
+
+        opts.on("--max-error-rate PERCENT", Float, "Fail when error rate exceeds this percent") do |percent|
+          raise OptionParser::InvalidArgument, "Max error rate must be between 0 and 100." if percent.negative? || percent > 100
+
+          cli_options[:max_error_rate] = percent
+        end
+
+        opts.on("--max-error-requests COUNT", Integer, "Fail when total error requests exceed this count") do |count|
+          raise OptionParser::InvalidArgument, "Max error requests must be zero or greater." if count.negative?
+
+          cli_options[:max_error_requests] = count
+        end
+
+        opts.on("--max-5xx-requests COUNT", Integer, "Fail when 5xx requests exceed this count") do |count|
+          raise OptionParser::InvalidArgument, "Max 5xx requests must be zero or greater." if count.negative?
+
+          cli_options[:max_5xx_requests] = count
         end
 
         opts.on("--config PATH", "Optional YAML config file path") do |config_path|

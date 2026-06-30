@@ -32,7 +32,8 @@ No environment variables are required for iteration 1. See `.env.example`.
 12. Run `ruby exe/log-file-analyzer tests/fixtures/batch/mixed/common-mixed.data tests/fixtures/batch/mixed/json-mixed.data`.
 13. Optional JSON report output: `ruby exe/log-file-analyzer --format json tests/fixtures/server.log`.
 14. Run `ruby exe/log-file-analyzer tests/fixtures/server.log.gz`.
-15. Run the full automated suite with `ruby bin/test` to execute every file under `tests/`.
+15. Run `ruby exe/log-file-analyzer --max-error-rate 30 tests/fixtures/server.log` to exercise threshold failure behavior.
+16. Run the full automated suite with `ruby bin/test` to execute every file under `tests/`.
 
 ## Installing The Packaged CLI
 1. Run `ruby bin/install`.
@@ -56,12 +57,15 @@ This pass added a real packaged install demo path without touching the machine's
 
 This iteration added gzip support so the same CLI can read archived `.log.gz` and `.jsonl.gz` files without a manual decompression step first. That keeps the parser, detector, and path resolver separate, but lets the tool fit the way teams usually store rotated logs in real environments.
 
+This pass added automation thresholds so the tool can do more than print a report and exit successfully every time. It can now fail with a distinct exit code when error rate, total error volume, or 5xx volume crosses a configured limit, which makes the CLI useful in CI jobs, scheduled checks, and scripted release validation.
+
 ## Notes
 - The CLI supports `common`, `json`, and `auto` input modes.
 - The repo includes `ruby bin/setup` for dependency bootstrap and `ruby bin/test` for the full test suite.
 - The repo includes `ruby bin/install` and `ruby bin/uninstall` for a repo-local packaged CLI workflow.
 - The CLI accepts `.log`, `.jsonl`, `.log.gz`, and `.jsonl.gz` inputs.
 - The CLI accepts one or more file paths, or a directory containing supported plain-text or gzip-compressed log files.
+- The CLI supports `--max-error-rate`, `--max-error-requests`, and `--max-5xx-requests` for threshold-based automation failures.
 - The CLI supports `text`, `json`, and `csv` output formats.
 - The CLI can load defaults from `.log-file-analyzer.yml` or a custom path passed through `--config`.
 - Config files reject unsupported keys and invalid option values with explicit errors.

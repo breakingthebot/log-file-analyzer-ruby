@@ -27,12 +27,39 @@ module LogFileAnalyzer
       assert_equal ["tests/fixtures/server.jsonl"], options[:input_paths]
     end
 
+    # Verifies threshold flags are parsed into the CLI options hash.
+    # @return [void]
+    def test_parse_options_accepts_threshold_flags
+      options = Main.parse_options(
+        [
+          "--max-error-rate", "40.5",
+          "--max-error-requests", "3",
+          "--max-5xx-requests", "1",
+          "tests/fixtures/server.log"
+        ]
+      )
+
+      assert_equal 40.5, options[:max_error_rate]
+      assert_equal 3, options[:max_error_requests]
+      assert_equal 1, options[:max_5xx_requests]
+    end
+
     # Verifies config-provided input paths are used when no CLI paths are supplied.
     # @return [void]
     def test_parse_options_uses_config_input_paths_when_cli_paths_are_missing
       options = Main.parse_options(["--config", fixture_path("config/basic.yml")])
 
       assert_equal ["tests/fixtures/server.log"], options[:input_paths]
+    end
+
+    # Verifies invalid threshold flag values are rejected early.
+    # @return [void]
+    def test_parse_options_rejects_invalid_threshold_values
+      error = assert_raises(OptionParser::ParseError) do
+        Main.parse_options(["--max-error-rate", "120", "tests/fixtures/server.log"])
+      end
+
+      assert_equal "invalid argument: --max-error-rate Max error rate must be between 0 and 100.", error.message
     end
 
     private

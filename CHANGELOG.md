@@ -90,3 +90,9 @@
 - Add gzip input support for `.log.gz` and `.jsonl.gz` files.
 - Route parser and format detection reads through a shared input-file reader.
 - Extend batch path resolution and test coverage for compressed log fixtures.
+
+## [0.16.0] - 2026-06-30
+
+- Add CLI thresholds for error rate, total error requests, and 5xx request volume.
+- Return a distinct failure exit code when configured thresholds are exceeded.
+- Add threshold unit and integration coverage for automation-oriented runs.
