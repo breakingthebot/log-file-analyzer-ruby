@@ -44,6 +44,20 @@ module LogFileAnalyzer
       assert_equal 1, options[:max_5xx_requests]
     end
 
+    # Verifies repeated comparison flags are collected as a second input set.
+    # @return [void]
+    def test_parse_options_collects_comparison_paths
+      options = Main.parse_options(
+        [
+          "--compare-to", "tests/fixtures/batch/common-a.log",
+          "--compare-to", "tests/fixtures/batch/common-b.log",
+          "tests/fixtures/server.log"
+        ]
+      )
+
+      assert_equal ["tests/fixtures/batch/common-a.log", "tests/fixtures/batch/common-b.log"], options[:compare_to_paths]
+    end
+
     # Verifies config-provided input paths are used when no CLI paths are supplied.
     # @return [void]
     def test_parse_options_uses_config_input_paths_when_cli_paths_are_missing

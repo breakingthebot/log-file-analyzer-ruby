@@ -102,3 +102,9 @@
 - Stream parsed entries through the CLI instead of building one large in-memory entry list.
 - Add an incremental summary accumulator for analyzer metrics and time buckets.
 - Add parser, analyzer, and executable coverage for the streaming execution path.
+
+## [0.18.0] - 2026-06-30
+
+- Add `--compare-to` support for comparing the primary input set against a second file or directory set.
+- Add summary comparison deltas for top-level metrics, request breakdowns, and endpoints.
+- Extend text, JSON, CSV, and CLI coverage for comparison-mode reporting.

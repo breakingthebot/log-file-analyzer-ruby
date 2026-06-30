@@ -10,6 +10,7 @@ require_relative "config/time_bucket_options"
 require_relative "config/time_bucket_series_options"
 require_relative "services/log_parser"
 require_relative "services/log_analyzer"
+require_relative "services/summary_comparator"
 require_relative "services/threshold_evaluator"
 require_relative "services/time_window_filter"
 require_relative "utils/config_loader"
@@ -33,26 +34,28 @@ module LogFileAnalyzer
       logger = Utils.build_logger
       options = parse_options(argv)
       file_paths = Utils::InputPathResolver.new.resolve!(options[:input_paths], logger: logger)
+      comparison_paths = resolve_comparison_paths(options, logger: logger)
       time_window = Utils::TimeWindowParser.new.parse(
         start_time_text: options[:start_time],
         end_time_text: options[:end_time]
       )
 
-      parser = Services::LogParser.new(logger: logger, input_format: options[:input_format])
-      time_window_filter = Services::TimeWindowFilter.new
-      filtered_entry_stream = parser.each_entry(file_paths).lazy.select do |entry|
-        time_window_filter.match?(
-          entry,
-          start_time: time_window[:start_time],
-          end_time: time_window[:end_time]
-        )
-      end
-      summary = Services::LogAnalyzer.new.summarize_stream(
-        filtered_entry_stream,
-        time_bucket: options[:time_bucket],
-        time_bucket_series: options[:time_bucket_series]
+      summary = build_summary(
+        file_paths,
+        options: options,
+        time_window: time_window,
+        logger: logger
       )
-      report = Utils::ReportFormatter.new(top_limit: options[:top]).format(summary, format: options[:format])
+      report_payload = build_report_payload(
+        time_bucket: options[:time_bucket],
+        time_bucket_series: options[:time_bucket_series],
+        summary: summary,
+        comparison_paths: comparison_paths,
+        options: options,
+        time_window: time_window,
+        logger: logger
+      )
+      report = Utils::ReportFormatter.new(top_limit: options[:top]).format(report_payload, format: options[:format])
       output_path = Utils::OutputWriter.new.write(report, output_path: options[:output_path], logger: logger)
       puts "Report written to #{output_path}" unless output_path.nil?
       threshold_result = Services::ThresholdEvaluator.new.evaluate(summary, options)
@@ -117,6 +120,11 @@ module LogFileAnalyzer
           cli_options[:output_path] = output_path
         end
 
+        opts.on("--compare-to PATH", "Add a file or directory to the comparison input set") do |comparison_path|
+          cli_options[:compare_to_paths] ||= []
+          cli_options[:compare_to_paths] << comparison_path
+        end
+
         opts.on("--max-error-rate PERCENT", Float, "Fail when error rate exceeds this percent") do |percent|
           raise OptionParser::InvalidArgument, "Max error rate must be between 0 and 100." if percent.negative? || percent > 100
 
@@ -166,6 +174,60 @@ module LogFileAnalyzer
       default_options
         .merge(config_options)
         .merge(cli_options)
+    end
+
+    # Resolves the optional comparison input set.
+    # @param options [Hash] parsed CLI options
+    # @param logger [Logger] diagnostic logger
+    # @return [Array<String>, nil]
+    def resolve_comparison_paths(options, logger:)
+      comparison_inputs = options[:compare_to_paths]
+      return nil if comparison_inputs.nil? || comparison_inputs.empty?
+
+      Utils::InputPathResolver.new.resolve!(comparison_inputs, logger: logger)
+    end
+
+    # Builds one analyzer summary from a resolved input set.
+    # @param file_paths [Array<String>] resolved input files
+    # @param options [Hash] parsed CLI options
+    # @param time_window [Hash] parsed time-window bounds
+    # @param logger [Logger] diagnostic logger
+    # @return [Hash]
+    def build_summary(file_paths, options:, time_window:, logger:)
+      parser = Services::LogParser.new(logger: logger, input_format: options[:input_format])
+      time_window_filter = Services::TimeWindowFilter.new
+      filtered_entry_stream = parser.each_entry(file_paths).lazy.select do |entry|
+        time_window_filter.match?(
+          entry,
+          start_time: time_window[:start_time],
+          end_time: time_window[:end_time]
+        )
+      end
+
+      Services::LogAnalyzer.new.summarize_stream(
+        filtered_entry_stream,
+        time_bucket: options[:time_bucket],
+        time_bucket_series: options[:time_bucket_series]
+      )
+    end
+
+    # Builds either a single-run summary payload or a comparison payload.
+    # @param summary [Hash] primary summary
+    # @param comparison_paths [Array<String>, nil] optional comparison input files
+    # @param options [Hash] parsed CLI options
+    # @param time_window [Hash] parsed time-window bounds
+    # @param logger [Logger] diagnostic logger
+    # @return [Hash]
+    def build_report_payload(summary:, comparison_paths:, options:, time_window:, logger:, **_unused)
+      return summary if comparison_paths.nil?
+
+      comparison_summary = build_summary(
+        comparison_paths,
+        options: options,
+        time_window: time_window,
+        logger: logger
+      )
+      Services::SummaryComparator.new.compare(summary, comparison_summary)
     end
   end
 end

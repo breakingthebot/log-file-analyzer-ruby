@@ -22,6 +22,8 @@ module LogFileAnalyzer
       # @param format [String] output format name
       # @return [String]
       def format(summary, format:)
+        return format_comparison_report(summary, format: format) if comparison_report?(summary)
+
         case format
         when "csv"
           build_csv_report(summary)
@@ -36,11 +38,53 @@ module LogFileAnalyzer
 
       private
 
+      # Checks whether the provided payload is a comparison report.
+      # @param summary [Hash] analyzer summary or comparison payload
+      # @return [Boolean]
+      def comparison_report?(summary)
+        summary["report_type"] == "comparison"
+      end
+
+      # Formats a comparison payload in one of the supported output formats.
+      # @param comparison_report [Hash] comparison payload
+      # @param format [String] output format name
+      # @return [String]
+      def format_comparison_report(comparison_report, format:)
+        case format
+        when "csv"
+          build_comparison_csv_report(comparison_report)
+        when "json"
+          JSON.pretty_generate(limit_comparison_endpoints(comparison_report))
+        when "text"
+          build_comparison_text_report(comparison_report)
+        else
+          raise ArgumentError, "Unsupported output format: #{format}"
+        end
+      end
+
       # Limits the top endpoint list to the configured size.
       # @param summary [Hash] analyzer summary
       # @return [Array<Hash>]
       def limited_endpoints(summary)
         summary.fetch("top_endpoints").first(@top_limit)
+      end
+
+      # Applies top-endpoint limits to all endpoint-heavy sections in comparison output.
+      # @param comparison_report [Hash] comparison payload
+      # @return [Hash]
+      def limit_comparison_endpoints(comparison_report)
+        {
+          "report_type" => comparison_report.fetch("report_type"),
+          "current" => comparison_report.fetch("current").merge(
+            "top_endpoints" => limited_endpoints(comparison_report.fetch("current"))
+          ),
+          "comparison" => comparison_report.fetch("comparison").merge(
+            "top_endpoints" => limited_endpoints(comparison_report.fetch("comparison"))
+          ),
+          "delta" => comparison_report.fetch("delta").merge(
+            "top_endpoints" => comparison_report.fetch("delta").fetch("top_endpoints").first(@top_limit)
+          )
+        }
       end
 
       # Builds the default human-readable terminal report.
@@ -69,6 +113,35 @@ module LogFileAnalyzer
         ].join("\n")
       end
 
+      # Builds the default human-readable comparison report.
+      # @param comparison_report [Hash] comparison payload
+      # @return [String]
+      def build_comparison_text_report(comparison_report)
+        current_summary = comparison_report.fetch("current")
+        comparison_summary = comparison_report.fetch("comparison")
+        deltas = comparison_report.fetch("delta")
+
+        endpoint_lines = deltas.fetch("top_endpoints").first(@top_limit).map do |entry|
+          "  - #{entry.fetch('endpoint')}: current #{entry.fetch('current')}, comparison #{entry.fetch('comparison')}, delta #{format_signed_number(entry.fetch('delta'))}"
+        end
+
+        [
+          "Log Comparison Summary",
+          "Current total requests: #{current_summary.fetch('total_requests')}",
+          "Comparison total requests: #{comparison_summary.fetch('total_requests')}",
+          "Summary deltas:",
+          build_summary_delta_lines(deltas.fetch("summary")),
+          "Method deltas:",
+          build_comparison_breakdown_lines(deltas.fetch("methods")),
+          "Status family deltas:",
+          build_comparison_breakdown_lines(deltas.fetch("status_families")),
+          "Status code deltas:",
+          build_comparison_breakdown_lines(deltas.fetch("status_codes")),
+          "Endpoint deltas:",
+          (endpoint_lines.empty? ? "  - No endpoints found" : endpoint_lines.join("\n"))
+        ].join("\n")
+      end
+
       # Builds text lines for a generic request breakdown section.
       # @param breakdown [Array<Hash>] summary breakdown entries
       # @return [String]
@@ -92,6 +165,26 @@ module LogFileAnalyzer
         end
 
         lines.empty? ? "  - No bucketed data found" : lines.join("\n")
+      end
+
+      # Builds text lines for comparison summary metrics.
+      # @param summary_deltas [Array<Hash>] comparison summary rows
+      # @return [String]
+      def build_summary_delta_lines(summary_deltas)
+        summary_deltas.map do |entry|
+          "  - #{entry.fetch('label')}: current #{entry.fetch('current')}, comparison #{entry.fetch('comparison')}, delta #{format_signed_number(entry.fetch('delta'))}"
+        end.join("\n")
+      end
+
+      # Builds text lines for comparison breakdown sections.
+      # @param breakdown [Array<Hash>] comparison breakdown rows
+      # @return [String]
+      def build_comparison_breakdown_lines(breakdown)
+        lines = breakdown.map do |entry|
+          "  - #{entry.fetch('label')}: current #{entry.fetch('current')}, comparison #{entry.fetch('comparison')}, delta #{format_signed_number(entry.fetch('delta'))}"
+        end
+
+        lines.empty? ? "  - No data found" : lines.join("\n")
       end
 
       # Builds text lines for a bucket's secondary series breakdown.
@@ -122,6 +215,22 @@ module LogFileAnalyzer
         end
       end
 
+      # Builds a machine-friendly CSV comparison report with sectioned rows.
+      # @param comparison_report [Hash] comparison payload
+      # @return [String]
+      def build_comparison_csv_report(comparison_report)
+        CSV.generate do |csv|
+          csv << %w[section label current comparison delta]
+          append_comparison_summary_rows(csv, comparison_report.fetch("delta").fetch("summary"))
+          append_comparison_breakdown_rows(csv, "method_deltas", comparison_report.fetch("delta").fetch("methods"))
+          append_comparison_breakdown_rows(csv, "status_family_deltas", comparison_report.fetch("delta").fetch("status_families"))
+          append_comparison_breakdown_rows(csv, "status_code_deltas", comparison_report.fetch("delta").fetch("status_codes"))
+          comparison_report.fetch("delta").fetch("top_endpoints").first(@top_limit).each do |entry|
+            csv << ["endpoint_deltas", entry.fetch("endpoint"), entry.fetch("current"), entry.fetch("comparison"), entry.fetch("delta")]
+          end
+        end
+      end
+
       # Appends generic breakdown rows to the CSV output.
       # @param csv [CSV] csv builder
       # @param section [String] breakdown section name
@@ -144,6 +253,35 @@ module LogFileAnalyzer
             csv << ["time_bucket_series", entry.fetch("label"), series_entry.fetch("requests"), series_entry.fetch("label")]
           end
         end
+      end
+
+      # Appends comparison summary rows to the CSV output.
+      # @param csv [CSV] csv builder
+      # @param summary_rows [Array<Hash>] comparison summary rows
+      # @return [void]
+      def append_comparison_summary_rows(csv, summary_rows)
+        summary_rows.each do |entry|
+          csv << ["summary_deltas", entry.fetch("label"), entry.fetch("current"), entry.fetch("comparison"), entry.fetch("delta")]
+        end
+      end
+
+      # Appends comparison breakdown rows to the CSV output.
+      # @param csv [CSV] csv builder
+      # @param section [String] comparison section name
+      # @param rows [Array<Hash>] comparison breakdown rows
+      # @return [void]
+      def append_comparison_breakdown_rows(csv, section, rows)
+        rows.each do |entry|
+          csv << [section, entry.fetch("label"), entry.fetch("current"), entry.fetch("comparison"), entry.fetch("delta")]
+        end
+      end
+
+      # Formats signed numeric deltas consistently for text output.
+      # @param value [Numeric] delta value
+      # @return [String]
+      def format_signed_number(value)
+        number = value.is_a?(Float) ? Kernel.format("%.2f", value) : value.to_s
+        value.negative? ? number : "+#{number}"
       end
     end
   end

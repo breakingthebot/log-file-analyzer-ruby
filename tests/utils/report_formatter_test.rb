@@ -5,6 +5,7 @@
 require_relative "../test_helper"
 require "csv"
 require "json"
+require_relative "../../src/services/summary_comparator"
 
 module LogFileAnalyzer
   module Utils
@@ -69,6 +70,49 @@ module LogFileAnalyzer
         assert_equal "/api/users", rows[-1]["label"]
       end
 
+      # Verifies text comparison output includes metric and endpoint deltas.
+      # @return [void]
+      def test_text_format_renders_comparison_lines
+        formatter = ReportFormatter.new(top_limit: 2)
+
+        report = formatter.format(sample_comparison_report, format: "text")
+
+        assert_includes report, "Log Comparison Summary"
+        assert_includes report, "Current total requests: 3"
+        assert_includes report, "Comparison total requests: 2"
+        assert_includes report, "request volume: current 3, comparison 2, delta +1"
+        assert_includes report, "GET: current 2, comparison 1, delta +1"
+        assert_includes report, "/api/users: current 2, comparison 1, delta +1"
+      end
+
+      # Verifies JSON comparison output honors endpoint limits.
+      # @return [void]
+      def test_json_format_limits_comparison_endpoints
+        formatter = ReportFormatter.new(top_limit: 1)
+
+        report = JSON.parse(formatter.format(sample_comparison_report, format: "json"))
+
+        assert_equal "comparison", report["report_type"]
+        assert_equal 1, report["current"]["top_endpoints"].length
+        assert_equal 1, report["comparison"]["top_endpoints"].length
+        assert_equal 1, report["delta"]["top_endpoints"].length
+      end
+
+      # Verifies CSV comparison output includes delta rows.
+      # @return [void]
+      def test_csv_format_renders_comparison_rows
+        formatter = ReportFormatter.new(top_limit: 1)
+
+        rows = CSV.parse(formatter.format(sample_comparison_report, format: "csv"), headers: true)
+
+        assert_equal ["section", "label", "current", "comparison", "delta"], rows.headers
+        assert_equal "summary_deltas", rows[0]["section"]
+        assert_equal "request volume", rows[0]["label"]
+        assert_equal "method_deltas", rows[3]["section"]
+        assert_equal "endpoint_deltas", rows[-1]["section"]
+        assert_equal "/api/users", rows[-1]["label"]
+      end
+
       private
 
       # Supplies a stable summary fixture for formatter tests.
@@ -113,6 +157,34 @@ module LogFileAnalyzer
             { "endpoint" => "/health", "requests" => 1 }
           ]
         }
+      end
+
+      # Supplies a stable comparison fixture for formatter tests.
+      # @return [Hash]
+      def sample_comparison_report
+        current_summary = sample_summary
+        comparison_summary = sample_summary.merge(
+          "total_requests" => 2,
+          "error_requests" => 0,
+          "error_rate" => 0.0,
+          "methods" => [
+            { "label" => "GET", "requests" => 1 },
+            { "label" => "POST", "requests" => 1 }
+          ],
+          "status_families" => [
+            { "label" => "2xx", "requests" => 2 }
+          ],
+          "status_codes" => [
+            { "label" => "200", "requests" => 2 }
+          ],
+          "time_buckets" => [],
+          "top_endpoints" => [
+            { "endpoint" => "/api/users", "requests" => 1 },
+            { "endpoint" => "/health", "requests" => 1 }
+          ]
+        )
+
+        Services::SummaryComparator.new.compare(current_summary, comparison_summary)
       end
     end
   end

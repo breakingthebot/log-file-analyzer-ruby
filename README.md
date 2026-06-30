@@ -33,7 +33,8 @@ No environment variables are required for iteration 1. See `.env.example`.
 13. Optional JSON report output: `ruby exe/log-file-analyzer --format json tests/fixtures/server.log`.
 14. Run `ruby exe/log-file-analyzer tests/fixtures/server.log.gz`.
 15. Run `ruby exe/log-file-analyzer --max-error-rate 30 tests/fixtures/server.log` to exercise threshold failure behavior.
-16. Run the full automated suite with `ruby bin/test` to execute every file under `tests/`.
+16. Run `ruby exe/log-file-analyzer --compare-to tests/fixtures/batch/common-a.log tests/fixtures/server.log`.
+17. Run the full automated suite with `ruby bin/test` to execute every file under `tests/`.
 
 ## Installing The Packaged CLI
 1. Run `ruby bin/install`.
@@ -61,12 +62,15 @@ This pass added automation thresholds so the tool can do more than print a repor
 
 This iteration changed the execution model so the CLI can analyze much larger inputs without building one giant in-memory entry array first. The parser now streams entries file by file, the time filter is applied lazily, and the analyzer accumulates counts incrementally, which keeps the output the same while making the pipeline much more realistic for production-sized logs.
 
+This pass added comparison mode so the CLI can explain change between two log inputs instead of only summarizing one run in isolation. It now supports a second input set through explicit `--compare-to` flags, calculates stable metric and breakdown deltas, and renders the result in text, JSON, or CSV so the feature works for both manual review and automation.
+
 ## Notes
 - The CLI supports `common`, `json`, and `auto` input modes.
 - The repo includes `ruby bin/setup` for dependency bootstrap and `ruby bin/test` for the full test suite.
 - The repo includes `ruby bin/install` and `ruby bin/uninstall` for a repo-local packaged CLI workflow.
 - The CLI accepts `.log`, `.jsonl`, `.log.gz`, and `.jsonl.gz` inputs.
 - The CLI accepts one or more file paths, or a directory containing supported plain-text or gzip-compressed log files.
+- The CLI supports repeated `--compare-to PATH` flags to compare the primary input set against a second file or directory set.
 - The CLI supports `--max-error-rate`, `--max-error-requests`, and `--max-5xx-requests` for threshold-based automation failures.
 - The CLI streams parsed entries into the analyzer instead of materializing the full dataset up front.
 - The CLI supports `text`, `json`, and `csv` output formats.

@@ -51,6 +51,29 @@ module LogFileAnalyzer
       assert_equal Main::THRESHOLD_FAILURE_EXIT_CODE, status.exitstatus
     end
 
+    # Verifies the CLI can render a comparison report to JSON output.
+    # @return [void]
+    def test_run_writes_comparison_report_to_output_file
+      Dir.mktmpdir do |directory_path|
+        output_path = File.join(directory_path, "comparison.json")
+
+        exit_code = Main.run(
+          [
+            "--format", "json",
+            "--output", output_path,
+            "--compare-to", fixture_path("batch/common-a.log"),
+            fixture_path("server.log")
+          ]
+        )
+
+        assert_equal 0, exit_code
+        report = JSON.parse(File.read(output_path))
+        assert_equal "comparison", report["report_type"]
+        assert_equal 5, report["current"]["total_requests"]
+        assert_equal 2, report["comparison"]["total_requests"]
+      end
+    end
+
     private
 
     # Resolves a fixture path for the current test suite.
