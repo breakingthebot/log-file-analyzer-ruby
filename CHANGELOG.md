@@ -84,3 +84,9 @@
 - Add `bin/install` and `bin/uninstall` for repo-local packaged gem install and cleanup flows.
 - Add a shared local-install path helper so packaging scripts and tests use the same locations.
 - Add integration coverage that installs the gem and verifies the installed command can report its version.
+
+## [0.15.0] - 2026-06-30
+
+- Add gzip input support for `.log.gz` and `.jsonl.gz` files.
+- Route parser and format detection reads through a shared input-file reader.
+- Extend batch path resolution and test coverage for compressed log fixtures.

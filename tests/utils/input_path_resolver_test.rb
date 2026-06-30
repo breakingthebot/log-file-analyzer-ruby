@@ -15,10 +15,12 @@ module LogFileAnalyzer
 
         resolved_paths = resolver.resolve!([fixture_path("batch")], logger: logger)
 
-        assert_equal 3, resolved_paths.length
+        assert_equal 5, resolved_paths.length
         assert_equal fixture_path("batch/common-a.log"), resolved_paths[0]
         assert_equal fixture_path("batch/common-b.log"), resolved_paths[1]
-        assert_equal fixture_path("batch/structured.jsonl"), resolved_paths[2]
+        assert_equal fixture_path("batch/common-c.log.gz"), resolved_paths[2]
+        assert_equal fixture_path("batch/structured.jsonl"), resolved_paths[3]
+        assert_equal fixture_path("batch/structured.jsonl.gz"), resolved_paths[4]
       end
 
       # Verifies duplicate file references are only counted once.
@@ -31,7 +33,7 @@ module LogFileAnalyzer
           logger: logger
         )
 
-        assert_equal 3, resolved_paths.length
+        assert_equal 5, resolved_paths.length
       end
 
       # Verifies missing input raises a clear error.

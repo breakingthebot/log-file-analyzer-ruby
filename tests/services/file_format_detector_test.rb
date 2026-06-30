@@ -28,6 +28,26 @@ module LogFileAnalyzer
         assert_equal "json", detected_format
       end
 
+      # Verifies the detector recognizes compressed common logs from extension.
+      # @return [void]
+      def test_detect_returns_common_for_gzip_log_extension
+        detector = FileFormatDetector.new(logger: logger)
+
+        detected_format = detector.detect(fixture_path("server.log.gz"))
+
+        assert_equal "common", detected_format
+      end
+
+      # Verifies the detector recognizes compressed JSON logs from extension.
+      # @return [void]
+      def test_detect_returns_json_for_gzip_jsonl_extension
+        detector = FileFormatDetector.new(logger: logger)
+
+        detected_format = detector.detect(fixture_path("server.jsonl.gz"))
+
+        assert_equal "json", detected_format
+      end
+
       private
 
       # Builds a logger that keeps test output quiet.

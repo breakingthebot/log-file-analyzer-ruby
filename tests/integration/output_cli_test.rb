@@ -27,6 +27,14 @@ module LogFileAnalyzer
       end
     end
 
+    # Verifies the CLI can analyze a gzip-compressed log file through the main entry point.
+    # @return [void]
+    def test_run_accepts_gzip_input_file
+      exit_code = Main.run([fixture_path("server.log.gz")])
+
+      assert_equal 0, exit_code
+    end
+
     private
 
     # Resolves a fixture path for the current test suite.

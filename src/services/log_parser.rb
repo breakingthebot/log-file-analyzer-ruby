@@ -4,6 +4,7 @@
 
 require_relative "file_format_detector"
 require_relative "line_parser_factory"
+require_relative "../utils/input_file_reader"
 
 module LogFileAnalyzer
   module Services
@@ -26,7 +27,7 @@ module LogFileAnalyzer
         entries = []
         file_line_parsers = resolve_line_parsers(file_path)
 
-        File.foreach(file_path).with_index(1) do |line, line_number|
+        Utils::InputFileReader.each_line(file_path).with_index(1) do |line, line_number|
           entry = parse_line(line, file_line_parsers)
           entries << entry if entry
         rescue StandardError => e

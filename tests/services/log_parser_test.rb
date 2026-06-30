@@ -38,6 +38,32 @@ module LogFileAnalyzer
         assert_equal Time.iso8601("2026-06-29T10:00:03Z"), entries[3].timestamp.utc
       end
 
+      # Verifies the parser can read gzip-compressed common logs.
+      # @return [void]
+      def test_parse_file_returns_structured_entries_for_gzip_common_logs
+        logger = Utils.build_logger(stream: StringIO.new)
+        parser = LogParser.new(logger: logger, input_format: "common")
+
+        entries = parser.parse_file(fixture_path("server.log.gz"))
+
+        assert_equal 5, entries.length
+        assert_equal "/api/users", entries[1].endpoint
+        assert_equal 500, entries[2].status_code
+      end
+
+      # Verifies the parser can read gzip-compressed JSON logs.
+      # @return [void]
+      def test_parse_file_returns_structured_entries_for_gzip_json_logs
+        logger = Utils.build_logger(stream: StringIO.new)
+        parser = LogParser.new(logger: logger, input_format: "json")
+
+        entries = parser.parse_file(fixture_path("server.jsonl.gz"))
+
+        assert_equal 4, entries.length
+        assert_equal "/", entries[0].endpoint
+        assert_equal "/health", entries.last.endpoint
+      end
+
       # Verifies auto mode can parse files without an explicit format flag.
       # @return [void]
       def test_parse_file_auto_detects_json_lines
@@ -83,6 +109,23 @@ module LogFileAnalyzer
 
         assert_equal 4, entries.length
         assert_equal ["/reports", "/reports", "/events", "/events"], entries.map(&:endpoint)
+      end
+
+      # Verifies batch parsing can combine compressed and uncompressed files.
+      # @return [void]
+      def test_parse_files_combines_compressed_and_uncompressed_inputs
+        logger = Utils.build_logger(stream: StringIO.new)
+        parser = LogParser.new(logger: logger, input_format: "auto")
+
+        entries = parser.parse_files(
+          [
+            fixture_path("batch/common-a.log"),
+            fixture_path("batch/structured.jsonl.gz")
+          ]
+        )
+
+        assert_equal 3, entries.length
+        assert_equal ["/", "/api/users", "/api/admin"], entries.map(&:endpoint)
       end
 
       private

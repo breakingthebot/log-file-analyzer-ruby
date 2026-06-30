@@ -6,7 +6,7 @@ module LogFileAnalyzer
   module Utils
     # Expands file and directory inputs into supported log files.
     class InputPathResolver
-      SUPPORTED_PATTERNS = ["*.jsonl", "*.log"].freeze
+      SUPPORTED_PATTERNS = ["*.jsonl", "*.log", "*.jsonl.gz", "*.log.gz"].freeze
 
       # Resolves one or more CLI input paths into absolute file paths.
       # @param input_paths [Array<String>] user-provided paths

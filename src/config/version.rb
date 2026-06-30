@@ -3,5 +3,5 @@
 # Created: 2026-06-29
 
 module LogFileAnalyzer
-  VERSION = "0.14.0"
+  VERSION = "0.15.0"
 end
