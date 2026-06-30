@@ -96,3 +96,9 @@
 - Add CLI thresholds for error rate, total error requests, and 5xx request volume.
 - Return a distinct failure exit code when configured thresholds are exceeded.
 - Add threshold unit and integration coverage for automation-oriented runs.
+
+## [0.17.0] - 2026-06-30
+
+- Stream parsed entries through the CLI instead of building one large in-memory entry list.
+- Add an incremental summary accumulator for analyzer metrics and time buckets.
+- Add parser, analyzer, and executable coverage for the streaming execution path.

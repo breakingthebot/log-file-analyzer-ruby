@@ -111,6 +111,23 @@ module LogFileAnalyzer
         assert_equal ["/reports", "/reports", "/events", "/events"], entries.map(&:endpoint)
       end
 
+      # Verifies streamed parsing yields entries across multiple files.
+      # @return [void]
+      def test_each_entry_streams_entries_across_multiple_files
+        logger = Utils.build_logger(stream: StringIO.new)
+        parser = LogParser.new(logger: logger, input_format: "auto")
+
+        entries = parser.each_entry(
+          [
+            fixture_path("batch/common-a.log"),
+            fixture_path("batch/structured.jsonl")
+          ]
+        ).to_a
+
+        assert_equal 3, entries.length
+        assert_equal ["/", "/api/users", "/api/admin"], entries.map(&:endpoint)
+      end
+
       # Verifies batch parsing can combine compressed and uncompressed files.
       # @return [void]
       def test_parse_files_combines_compressed_and_uncompressed_inputs

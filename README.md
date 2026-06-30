@@ -59,6 +59,8 @@ This iteration added gzip support so the same CLI can read archived `.log.gz` an
 
 This pass added automation thresholds so the tool can do more than print a report and exit successfully every time. It can now fail with a distinct exit code when error rate, total error volume, or 5xx volume crosses a configured limit, which makes the CLI useful in CI jobs, scheduled checks, and scripted release validation.
 
+This iteration changed the execution model so the CLI can analyze much larger inputs without building one giant in-memory entry array first. The parser now streams entries file by file, the time filter is applied lazily, and the analyzer accumulates counts incrementally, which keeps the output the same while making the pipeline much more realistic for production-sized logs.
+
 ## Notes
 - The CLI supports `common`, `json`, and `auto` input modes.
 - The repo includes `ruby bin/setup` for dependency bootstrap and `ruby bin/test` for the full test suite.
@@ -66,6 +68,7 @@ This pass added automation thresholds so the tool can do more than print a repor
 - The CLI accepts `.log`, `.jsonl`, `.log.gz`, and `.jsonl.gz` inputs.
 - The CLI accepts one or more file paths, or a directory containing supported plain-text or gzip-compressed log files.
 - The CLI supports `--max-error-rate`, `--max-error-requests`, and `--max-5xx-requests` for threshold-based automation failures.
+- The CLI streams parsed entries into the analyzer instead of materializing the full dataset up front.
 - The CLI supports `text`, `json`, and `csv` output formats.
 - The CLI can load defaults from `.log-file-analyzer.yml` or a custom path passed through `--config`.
 - Config files reject unsupported keys and invalid option values with explicit errors.

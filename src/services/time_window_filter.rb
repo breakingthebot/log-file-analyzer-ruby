@@ -13,8 +13,17 @@ module LogFileAnalyzer
       # @return [Array<LogEntry>]
       def filter(entries, start_time:, end_time:)
         entries.select do |entry|
-          within_start?(entry.timestamp, start_time) && within_end?(entry.timestamp, end_time)
+          match?(entry, start_time: start_time, end_time: end_time)
         end
+      end
+
+      # Checks whether one entry matches the requested time window.
+      # @param entry [LogEntry] parsed log entry
+      # @param start_time [Time, nil] inclusive lower bound
+      # @param end_time [Time, nil] inclusive upper bound
+      # @return [Boolean]
+      def match?(entry, start_time:, end_time:)
+        within_start?(entry.timestamp, start_time) && within_end?(entry.timestamp, end_time)
       end
 
       private

@@ -4,6 +4,8 @@
 
 require_relative "../test_helper"
 require "tmpdir"
+require "open3"
+require "rbconfig"
 
 module LogFileAnalyzer
   class OutputCliTest < Minitest::Test
@@ -35,6 +37,20 @@ module LogFileAnalyzer
       assert_equal 0, exit_code
     end
 
+    # Verifies the executable preserves the threshold failure exit code contract.
+    # @return [void]
+    def test_executable_returns_threshold_exit_code
+      _stdout, _stderr, status = Open3.capture3(
+        RbConfig.ruby,
+        executable_path,
+        "--max-error-rate",
+        "30",
+        fixture_path("server.log")
+      )
+
+      assert_equal Main::THRESHOLD_FAILURE_EXIT_CODE, status.exitstatus
+    end
+
     private
 
     # Resolves a fixture path for the current test suite.
@@ -42,6 +58,12 @@ module LogFileAnalyzer
     # @return [String]
     def fixture_path(file_name)
       File.expand_path("../fixtures/#{file_name}", __dir__)
+    end
+
+    # Resolves the CLI executable path under the repository root.
+    # @return [String]
+    def executable_path
+      File.expand_path("../../exe/log-file-analyzer", __dir__)
     end
   end
 end

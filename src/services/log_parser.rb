@@ -24,27 +24,46 @@ module LogFileAnalyzer
       # @param file_path [String] path to the log file
       # @return [Array<LogEntry>]
       def parse_file(file_path)
-        entries = []
-        file_line_parsers = resolve_line_parsers(file_path)
-
-        Utils::InputFileReader.each_line(file_path).with_index(1) do |line, line_number|
-          entry = parse_line(line, file_line_parsers)
-          entries << entry if entry
-        rescue StandardError => e
-          @logger.warn("Failed to parse line #{line_number}: #{e.message}")
-        end
-
-        entries
+        each_entry([file_path]).to_a
       end
 
       # Parses multiple log files into one combined entry list.
       # @param file_paths [Array<String>] paths to the log files
       # @return [Array<LogEntry>]
       def parse_files(file_paths)
-        file_paths.flat_map { |file_path| parse_file(file_path) }
+        each_entry(file_paths).to_a
+      end
+
+      # Streams parsed entries across one or more input files.
+      # @param file_paths [Array<String>] paths to the log files
+      # @yieldparam entry [LogEntry] one parsed log entry
+      # @return [Enumerator, void]
+      def each_entry(file_paths)
+        return enum_for(__method__, file_paths) unless block_given?
+
+        file_paths.each do |file_path|
+          each_file_entry(file_path) do |entry|
+            yield entry
+          end
+        end
       end
 
       private
+
+      # Streams parsed entries for one input file.
+      # @param file_path [String] path to the log file
+      # @yieldparam entry [LogEntry] one parsed log entry
+      # @return [void]
+      def each_file_entry(file_path)
+        file_line_parsers = resolve_line_parsers(file_path)
+
+        Utils::InputFileReader.each_line(file_path).with_index(1) do |line, line_number|
+          entry = parse_line(line, file_line_parsers)
+          yield entry unless entry.nil?
+        rescue StandardError => e
+          @logger.warn("Failed to parse line #{line_number}: #{e.message}")
+        end
+      end
 
       # Parses one log line into a LogEntry.
       # @param line [String] raw log line

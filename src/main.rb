@@ -38,15 +38,17 @@ module LogFileAnalyzer
         end_time_text: options[:end_time]
       )
 
-      entries = Services::LogParser.new(logger: logger, input_format: options[:input_format]).parse_files(file_paths)
-      filtered_entries = Services::TimeWindowFilter.new.filter(
-        entries,
-        start_time: time_window[:start_time],
-        end_time: time_window[:end_time]
-      )
-      summary = Services::LogAnalyzer.new.summarize(filtered_entries, time_bucket: options[:time_bucket])
-      summary = Services::LogAnalyzer.new.summarize(
-        filtered_entries,
+      parser = Services::LogParser.new(logger: logger, input_format: options[:input_format])
+      time_window_filter = Services::TimeWindowFilter.new
+      filtered_entry_stream = parser.each_entry(file_paths).lazy.select do |entry|
+        time_window_filter.match?(
+          entry,
+          start_time: time_window[:start_time],
+          end_time: time_window[:end_time]
+        )
+      end
+      summary = Services::LogAnalyzer.new.summarize_stream(
+        filtered_entry_stream,
         time_bucket: options[:time_bucket],
         time_bucket_series: options[:time_bucket_series]
       )
